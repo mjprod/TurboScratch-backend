@@ -24,19 +24,19 @@ connection.connect((err) => {
 });
 
 // Exemplo de rota POST para salvar dados
-app.post('/salvar', (req, res) => {
+app.post('/save', (req, res) => {
   const { nome, email } = req.body;
   
-  const query = 'INSERT INTO usuarios (nome, email) VALUES (?, ?)';
+  const query = 'INSERT INTO user (name, email) VALUES (?, ?)';
   connection.query(query, [nome, email], (err, results) => {
     if (err) {
       return res.status(500).json({ error: err });
     }
-    res.status(200).json({ message: 'Usuário salvo com sucesso!' });
+    res.status(200).json({ message: 'user saved!' });
   });
 });
 
 const port = 3001;
 app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`);
+  console.log(`server port ${port}`);
 });
