@@ -25,7 +25,7 @@ connection.connect((err) => {
 
 // Exemplo de rota POST para salvar dados
 app.post('/save', (req, res) => {
-  const { nome, email } = req.body;
+  const { name, email } = req.body;
   
   const query = 'INSERT INTO user (name, email) VALUES (?, ?)';
   connection.query(query, [nome, email], (err, results) => {
