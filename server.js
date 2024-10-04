@@ -7,7 +7,6 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Configuração da conexão MySQL
 const connection = mysql.createConnection({
   host: '156.67.222.52',
   user: 'u552141195_fun_user',
@@ -23,7 +22,6 @@ connection.connect((err) => {
   }
 });
 
-// Exemplo de rota POST para salvar dados
 app.post('/save', (req, res) => {
   const { name, email } = req.body;
   
@@ -35,6 +33,29 @@ app.post('/save', (req, res) => {
     res.status(200).json({ message: 'user saved!' });
   });
 });
+
+app.post('/score', (req, res) => {
+  const { id } = req.body;
+  
+  if (!id) {
+    return res.status(400).json({ error: 'ID should not be null' });
+  }
+
+  const query = 'SELECT name, email, score FROM user WHERE id = ?';
+  
+  connection.query(query, [id], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'user not found' });
+    }
+    
+    res.status(200).json({ user: results[0] });
+  });
+});
+
 
 const port = 3001;
 app.listen(port, () => {
