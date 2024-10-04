@@ -28,7 +28,7 @@ app.post('/save', (req, res) => {
   const { name, email } = req.body;
   
   const query = 'INSERT INTO user (name, email) VALUES (?, ?)';
-  connection.query(query, [nome, email], (err, results) => {
+  connection.query(query, [name, email], (err, results) => {
     if (err) {
       return res.status(500).json({ error: err });
     }
