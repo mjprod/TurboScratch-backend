@@ -34,14 +34,14 @@ app.post('/save', (req, res) => {
   });
 });
 
-app.post('/score', (req, res) => {
+app.post('/user_details', (req, res) => {
   const { id } = req.body;
   
   if (!id) {
     return res.status(400).json({ error: 'ID should not be null' });
   }
 
-  const query = 'SELECT name, email, score FROM user WHERE id = ?';
+  const query = 'SELECT name, score, lucky_symbol,tickets FROM user WHERE id = ?';
   
   connection.query(query, [id], (err, results) => {
     if (err) {
