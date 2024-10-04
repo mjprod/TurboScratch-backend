@@ -9,7 +9,7 @@ app.use(bodyParser.json());
 
 // Configuração da conexão MySQL
 const connection = mysql.createConnection({
-  host: 'localhost',
+  host: '156.67.222.52',
   user: 'u552141195_fun_user',
   password: 'Fun_@pp_2024',
   database: 'u552141195_fun_app'
