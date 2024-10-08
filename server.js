@@ -16,6 +16,21 @@ const pool = mysql.createPool({
   database: "u552141195_fun_app",
 });
 
+// Health check endpoint to test server
+app.get("/health", (req, res) => {
+  res.status(200).json({ message: "Server is healthy!" });
+});
+
+// Optionally, you can also check the database connection health
+app.get("/health/db", (req, res) => {
+  pool.query("SELECT 1", (err) => {
+    if (err) {
+      return res.status(500).json({ message: "Database connection failed" });
+    }
+    res.status(200).json({ message: "Database is healthy!" });
+  });
+});
+
 // Route to save user data
 app.post("/save", (req, res) => {
   const { name, email } = req.body;
