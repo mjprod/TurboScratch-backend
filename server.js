@@ -79,6 +79,64 @@ app.post("/user_details", (req, res) => {
   });
 });
 
+// Endpoint to update the user's number of tickets
+app.post("/updateTicket", (req, res) => {
+  const { userId, tickets } = req.body;
+
+  if (!userId || tickets === undefined) {
+    return res.status(400).json({ error: "User ID and tickets are required" });
+  }
+
+  const query = "UPDATE user SET tickets = ? WHERE id = ?";
+  pool.query(query, [tickets, userId], (err, results) => {
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ error: "Failed to update tickets" });
+    }
+
+    res.status(200).json({ message: "Tickets updated successfully!" });
+  });
+});
+
+// Endpoint to update the user's score
+app.post("/updateScore", (req, res) => {
+  const { userId, score } = req.body;
+
+  if (!userId || score === undefined) {
+    return res.status(400).json({ error: "User ID and score are required" });
+  }
+
+  const query = "UPDATE user SET score = ? WHERE id = ?";
+  pool.query(query, [score, userId], (err, results) => {
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ error: "Failed to update score" });
+    }
+
+    res.status(200).json({ message: "Score updated successfully!" });
+  });
+});
+
+// Endpoint to update the user's lucky symbol
+app.post("/updateLuckySymbol", (req, res) => {
+  const { userId, luckySymbol } = req.body;
+
+  if (!userId || !luckySymbol) {
+    return res.status(400).json({ error: "User ID and lucky symbol are required" });
+  }
+
+  const query = "UPDATE user SET lucky_symbol = ? WHERE id = ?";
+  pool.query(query, [luckySymbol, userId], (err, results) => {
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ error: "Failed to update lucky symbol" });
+    }
+
+    res.status(200).json({ message: "Lucky symbol updated successfully!" });
+  });
+});
+
+
 // Handle graceful shutdown and close the MySQL connection properly
 process.on('SIGINT', () => {
   console.log('Gracefully shutting down...');
