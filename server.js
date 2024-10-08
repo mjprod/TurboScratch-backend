@@ -118,15 +118,15 @@ app.post("/updateScore", (req, res) => {
 });
 
 // Endpoint to update the user's lucky symbol
-app.post("/updateLuckySymbol", (req, res) => {
-  const { id, luckySymbol } = req.body;
+app.post("/updatelucky_symbol", (req, res) => {
+  const { id, lucky_symbol } = req.body;
 
-  if (!id || !luckySymbol) {
+  if (!id || !lucky_symbol) {
     return res.status(400).json({ error: "User ID and lucky symbol are required" });
   }
 
   const query = "UPDATE user SET lucky_symbol = ? WHERE id = ?";
-  pool.query(query, [luckySymbol, id], (err, results) => {
+  pool.query(query, [lucky_symbol, id], (err, results) => {
     if (err) {
       console.error("Database error:", err);
       return res.status(500).json({ error: "Failed to update lucky symbol" });
