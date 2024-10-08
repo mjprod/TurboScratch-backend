@@ -81,14 +81,14 @@ app.post("/user_details", (req, res) => {
 
 // Endpoint to update the user's number of tickets
 app.post("/updateTicket", (req, res) => {
-  const { userId, tickets } = req.body;
+  const { id, tickets } = req.body;
 
-  if (!userId || tickets === undefined) {
+  if (!id || tickets === undefined) {
     return res.status(400).json({ error: "User ID and tickets are required" });
   }
 
   const query = "UPDATE user SET tickets = ? WHERE id = ?";
-  pool.query(query, [tickets, userId], (err, results) => {
+  pool.query(query, [tickets, id], (err, results) => {
     if (err) {
       console.error("Database error:", err);
       return res.status(500).json({ error: "Failed to update tickets" });
@@ -100,14 +100,14 @@ app.post("/updateTicket", (req, res) => {
 
 // Endpoint to update the user's score
 app.post("/updateScore", (req, res) => {
-  const { userId, score } = req.body;
+  const { id, score } = req.body;
 
-  if (!userId || score === undefined) {
+  if (!id || score === undefined) {
     return res.status(400).json({ error: "User ID and score are required" });
   }
 
   const query = "UPDATE user SET score = ? WHERE id = ?";
-  pool.query(query, [score, userId], (err, results) => {
+  pool.query(query, [score, id], (err, results) => {
     if (err) {
       console.error("Database error:", err);
       return res.status(500).json({ error: "Failed to update score" });
@@ -119,14 +119,14 @@ app.post("/updateScore", (req, res) => {
 
 // Endpoint to update the user's lucky symbol
 app.post("/updateLuckySymbol", (req, res) => {
-  const { userId, luckySymbol } = req.body;
+  const { id, luckySymbol } = req.body;
 
-  if (!userId || !luckySymbol) {
+  if (!id || !luckySymbol) {
     return res.status(400).json({ error: "User ID and lucky symbol are required" });
   }
 
   const query = "UPDATE user SET lucky_symbol = ? WHERE id = ?";
-  pool.query(query, [luckySymbol, userId], (err, results) => {
+  pool.query(query, [luckySymbol, id], (err, results) => {
     if (err) {
       console.error("Database error:", err);
       return res.status(500).json({ error: "Failed to update lucky symbol" });
