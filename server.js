@@ -118,7 +118,7 @@ app.post("/updateScore", (req, res) => {
 });
 
 // Endpoint to update the user's lucky symbol
-app.post("/updatelucky_symbol", (req, res) => {
+app.post("/updateLuckySymbol", (req, res) => {
   const { id, lucky_symbol } = req.body;
 
   if (!id || !lucky_symbol) {
