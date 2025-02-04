@@ -149,7 +149,7 @@ process.on('SIGINT', () => {
 });
 
 // Start the server on port 3001
-const port = 3001;
+const port = 8082;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
