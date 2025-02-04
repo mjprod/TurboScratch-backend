@@ -53,17 +53,30 @@ app.post("/save", (req, res) => {
 
 // Route to fetch user details by ID
 app.post("/user_details", (req, res) => {
-  const { id } = req.body;
+  const { user_id, utc_date } = req.body;
 
-  // Validate if ID is provided
-  if (!id) {
-    return res.status(400).json({ error: "ID should not be null" });
+  // Validate if ID and UTC date are provided
+  if (!user_id || !utc_date) {
+    return res.status(400).json({ error: "User ID and UTC date are required" });
   }
 
-  // Query to fetch user details
-  const query =
-    "SELECT name, score, lucky_symbol, tickets, cards FROM user WHERE id = ?";
-  pool.query(query, [id], (err, results) => {
+  // Query to fetch user details and match the correct round
+  const query = `
+    SELECT 
+      u.full_name, 
+      u.total_score, 
+      u.lucky_symbol_balance, 
+      u.ticket_balance, 
+      u.card_balance, 
+      r.round_id, 
+      r.round_name
+    FROM users u
+    LEFT JOIN rounds r ON u.round_id = r.round_id 
+    WHERE u.user_id = ? 
+    AND ? BETWEEN r.round_initial_date AND r.round_finished_date
+  `;
+
+  pool.query(query, [user_id, utc_date], (err, results) => {
     if (err) {
       console.error('Database error:', err);
       return res.status(500).json({ error: err.message });
@@ -71,10 +84,10 @@ app.post("/user_details", (req, res) => {
 
     // Check if any user was found
     if (results.length === 0) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User or active round not found" });
     }
 
-    // Return user details
+    // Return user details including round info
     res.status(200).json({ user: results[0] });
   });
 });
