@@ -146,12 +146,24 @@ app.post("/users", (req, res) => {
 });
 
 // Helper function to fetch daily data for the active campaign period, grouped by week, and return the response
+// Helper function to fetch daily data for the active campaign period,
+// grouped by week (relative to the campaign start), and return the response.
+// Helper function to fetch daily data for the active campaign period, grouped by week (relative to campaign start),
+// and return the response with "current_week" and "days" as an array.
 function fetchDailyDataAndReturn(user, activeCampaign, res) {
-  // Query to group daily records by week (using WEEK() with mode 1 for ISO week numbers)
+  // Calculate the total number of weeks in the campaign
+  const campaignStart = new Date(activeCampaign.date_time_initial);
+  const campaignEnd = new Date(activeCampaign.date_time_final);
+  const diffDays = Math.ceil((campaignEnd - campaignStart) / (1000 * 60 * 60 * 24));
+  const totalWeeks = Math.ceil(diffDays / 7);
+
+  // Query to group daily records by week relative to the campaign start date.
+  // The week is computed as: FLOOR(DATEDIFF(create_at, campaignStart) / 7) + 1.
   const dailyQuery = `
-    SELECT WEEK(create_at, 1) AS week, 
-           COUNT(*) AS total_entries,
-           GROUP_CONCAT(DATE(create_at) ORDER BY create_at ASC) AS days
+    SELECT 
+      FLOOR(DATEDIFF(create_at, ?) / 7) + 1 AS week,
+      COUNT(*) AS total_entries,
+      GROUP_CONCAT(DATE(create_at) ORDER BY create_at ASC) AS days
     FROM Daily
     WHERE user_id = ? 
       AND create_at BETWEEN ? AND ?
@@ -161,31 +173,133 @@ function fetchDailyDataAndReturn(user, activeCampaign, res) {
 
   pool.query(
     dailyQuery,
-    [user.user_id, activeCampaign.date_time_initial, activeCampaign.date_time_final],
+    [
+      activeCampaign.date_time_initial,
+      user.user_id,
+      activeCampaign.date_time_initial,
+      activeCampaign.date_time_final
+    ],
     (err, dailyGroupedResults) => {
       if (err) {
         console.error("Error fetching grouped daily data:", err);
         return res.status(500).json({ error: err.message });
       }
-      console.log("Daily data grouped by week:", dailyGroupedResults);
-      return res.status(200).json({ user, daily: dailyGroupedResults });
+
+      // Transform each row: rename "week" to "current_week" and split the "days" string into an array.
+      const transformedResults = dailyGroupedResults.map(row => {
+        return {
+          current_week: row.week,
+          total_entries: row.total_entries,
+          days: row.days ? row.days.split(",") : []
+        };
+      });
+
+      console.log("Daily data grouped by week:", transformedResults);
+      return res.status(200).json({
+        user,
+        daily: transformedResults,
+        totalWeeks: totalWeeks
+      });
     }
   );
 }
 
 // Endpoint para criar um registro na tabela Daily
-app.post("/daily", (req, res) => {
+app.post("/daily_question", (req, res) => {
   const { user_id } = req.body;
   if (!user_id) {
     return res.status(400).json({ error: "user_id is required" });
   }
-  const query = "INSERT INTO Daily (user_id) VALUES (?)";
-  pool.query(query, [user_id], (err, results) => {
+
+  // 1. Determine the new question_id for the given user from the Answers table.
+  // This query gets the maximum question_id currently stored for that user.
+  const selectMaxQuery = "SELECT MAX(question_id) AS maxQuestion FROM Answers WHERE user_id = ?";
+  pool.query(selectMaxQuery, [user_id], (err, results) => {
     if (err) {
-      console.error("Database error:", err);
+      console.error("Error selecting max question_id:", err);
       return res.status(500).json({ error: err.message });
     }
-    res.status(200).json({ message: "Daily record created successfully!", dailyId: results.insertId });
+
+    let newQuestionId = 1;
+    if (results[0].maxQuestion !== null) {
+      newQuestionId = results[0].maxQuestion + 1;
+    }
+
+    // 2. Retrieve the question text from the Questions table using newQuestionId.
+    const questionQuery = "SELECT question FROM turbo_scratch.Questions WHERE question_id = ?";
+    pool.query(questionQuery, [newQuestionId], (err, questionResults) => {
+      if (err) {
+        console.error("Error fetching question:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      if (questionResults.length === 0) {
+        return res.status(404).json({ error: "Question not found" });
+      }
+
+      const questionText = questionResults[0].question;
+
+      // 3. Return the question details to the client.
+      // The client will display the question, and once the user answers,
+      // a separate endpoint will handle the answer insertion.
+      return res.status(200).json({
+        question_id: newQuestionId,
+        question: questionText
+      });
+    });
+  });
+});
+
+app.post("/daily_answer", (req, res) => {
+  const { question_id, answer, user_id } = req.body;
+
+  // Validate that all required parameters are provided
+  if (!question_id || !answer || !user_id) {
+    return res.status(400).json({ error: "question_id, answer, and user_id are required" });
+  }
+
+  // 1. Insert the answer into the Answers table
+  const insertAnswerQuery = `
+    INSERT INTO Answers (answer, question_id, user_id)
+    VALUES (?, ?, ?)
+  `;
+  pool.query(insertAnswerQuery, [answer, question_id, user_id], (err, answerResult) => {
+    if (err) {
+      console.error("Error inserting answer:", err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    // 2. Insert the daily record into the Daily table with fixed values
+    const cards_won = 12;
+    const cards_played = 0;
+    const insertDailyQuery = `
+      INSERT INTO Daily (user_id, cards_won, cards_played, question_id)
+      VALUES (?, ?, ?, ?)
+    `;
+    pool.query(insertDailyQuery, [user_id, cards_won, cards_played, question_id], (err, dailyResult) => {
+      if (err) {
+        console.error("Error inserting daily record:", err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      // 3. Retrieve the inserted Daily record
+      const dailyId = dailyResult.insertId;
+      const selectDailyQuery = "SELECT * FROM Daily WHERE daily_id = ?";
+      pool.query(selectDailyQuery, [dailyId], (err, dailyRecords) => {
+        if (err) {
+          console.error("Error fetching daily record:", err);
+          return res.status(500).json({ error: err.message });
+        }
+        if (dailyRecords.length === 0) {
+          return res.status(404).json({ error: "Daily record not found" });
+        }
+
+        return res.status(200).json({
+          message: "Answer and daily record inserted successfully!",
+          answer_id: answerResult.insertId,
+          daily: dailyRecords[0]
+        });
+      });
+    });
   });
 });
 
