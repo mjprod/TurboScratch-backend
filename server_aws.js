@@ -154,8 +154,13 @@ function fetchDailyDataAndReturn(user, activeCampaign, res) {
   // Calculate the total number of weeks in the campaign
   const campaignStart = new Date(activeCampaign.date_time_initial);
   const campaignEnd = new Date(activeCampaign.date_time_final);
+  const today = new Date();
+
   const diffDays = Math.ceil((campaignEnd - campaignStart) / (1000 * 60 * 60 * 24));
   const totalWeeks = Math.ceil(diffDays / 7);
+
+  const daysSinceStart = Math.floor((today - campaignStart) / (1000 * 60 * 60 * 24));
+  const currentWeek = Math.floor(daysSinceStart / 7) + 1;
 
   // Query to group daily records by week relative to the campaign start date.
   // The week is computed as: FLOOR(DATEDIFF(create_at, campaignStart) / 7) + 1.
@@ -163,7 +168,7 @@ function fetchDailyDataAndReturn(user, activeCampaign, res) {
     SELECT 
       FLOOR(DATEDIFF(create_at, ?) / 7) + 1 AS week,
       COUNT(*) AS total_entries,
-      GROUP_CONCAT(DATE(create_at) ORDER BY create_at ASC) AS days
+      GROUP_CONCAT(create_at ORDER BY create_at ASC) AS days
     FROM Daily
     WHERE user_id = ? 
       AND create_at BETWEEN ? AND ?
@@ -198,7 +203,8 @@ function fetchDailyDataAndReturn(user, activeCampaign, res) {
       return res.status(200).json({
         user,
         daily: transformedResults,
-        totalWeeks: totalWeeks
+        totalWeeks: totalWeeks,
+        currentWeek: currentWeek
       });
     }
   );
