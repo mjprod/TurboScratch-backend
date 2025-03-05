@@ -297,11 +297,22 @@ app.post("/daily_answer", (req, res) => {
         if (dailyRecords.length === 0) {
           return res.status(404).json({ error: "Daily record not found" });
         }
-
-        return res.status(200).json({
-          message: "Answer and daily record inserted successfully!",
-          answer_id: answerResult.insertId,
-          daily: dailyRecords[0]
+        const updateUserQuery = `
+          UPDATE Users
+          SET card_balance = card_balance + ?
+          WHERE user_id = ?;
+        `;
+        pool.query(updateUserQuery, [cards_won, user_id], (err, result) => {
+          if (err) {
+            console.error("Error updating user balance:", err);
+            return res.status(500).json({ error: err.message });
+          }
+          console.log("User balance updated successfully");
+          return res.status(200).json({
+            message: "Answer and daily record inserted successfully!",
+            answer_id: answerResult.insertId,
+            daily: dailyRecords[0]
+          });
         });
       });
     });
