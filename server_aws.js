@@ -256,10 +256,10 @@ app.post("/daily_question", (req, res) => {
 });
 
 app.post("/daily_answer", (req, res) => {
-  const { question_id, answer, user_id } = req.body;
+  const { question_id, answer, user_id, cards_won } = req.body;
 
   // Validate that all required parameters are provided
-  if (!question_id || !answer || !user_id) {
+  if (!question_id || !answer || !user_id || !cards_won) {
     return res.status(400).json({ error: "question_id, answer, and user_id are required" });
   }
 
@@ -275,7 +275,6 @@ app.post("/daily_answer", (req, res) => {
     }
 
     // 2. Insert the daily record into the Daily table with fixed values
-    const cards_won = 12;
     const cards_played = 0;
     const insertDailyQuery = `
       INSERT INTO Daily (user_id, cards_won, cards_played, question_id)
