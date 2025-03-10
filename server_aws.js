@@ -203,8 +203,8 @@ function fetchDailyDataAndReturn(user, activeCampaign, res) {
       return res.status(200).json({
         user,
         daily: transformedResults,
-        totalWeeks: totalWeeks,
-        currentWeek: currentWeek
+        total_weeks: totalWeeks,
+        current_week: currentWeek
       });
     }
   );
