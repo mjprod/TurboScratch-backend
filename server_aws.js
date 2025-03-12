@@ -373,6 +373,105 @@ app.post("/leader_board", (req, res) => {
   });
 });
 
+app.post("/update_score", (req, res) => {
+  const { user_id, beta_block_id, score } = req.body;
+
+  if (!user_id || !beta_block_id || !score) {
+    return res.status(400).json({ error: "user_id, beta_block_id and score are required" });
+  }
+  const betaBlockQuery = `
+    SELECT *
+    FROM BetaBlock
+    WHERE beta_block_id = ?;
+  `;
+  pool.query(betaBlockQuery, [beta_block_id], (err, betaBlockResult) => {
+    if (err) {
+      console.error("Error Getting BetaBlock data:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    const dailyBlockQuery = `
+      SELECT *
+      FROM Daily
+      WHERE user_id = ?
+      AND create_at BETWEEN ? AND ? 
+      ORDER BY create_at ASC;
+    `;
+    if (betaBlockQuery.length === 0) {
+      return res.status(404).json({ error: "Beta Block not found" });
+    }
+    pool.query(dailyBlockQuery, [user_id, betaBlockResult[0].date_time_initial, betaBlockResult[0].date_time_final], (err, dailyBlockResult) => {
+      if (err) {
+        console.error("Error Getting Daily data:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      if (dailyBlockResult.length === 0) {
+        return res.status(404).json({ error: "Daily Data not found" });
+      }
+
+      const dailyToDeduct = dailyBlockResult.find((dailyBlockResult) => dailyBlockResult.cards_played < dailyBlockResult.cards_won);
+      if (!dailyToDeduct) {
+        return res.status(404).json({ error: "Daily data with not played cards not found" });
+      }
+
+      const updateCardsPlayedQuery = `
+        UPDATE Daily
+        SET cards_played = cards_played + 1
+        WHERE user_id = ? AND daily_id = ?;
+      `;
+      pool.query(updateCardsPlayedQuery, [user_id, dailyToDeduct.daily_id], (err, result) => {
+        if (err) {
+          console.error("Error Updating Daily data:", err);
+          return res.status(500).json({ error: err.message });
+        }
+        const updateUserScoreQuery = `
+          UPDATE Users
+          SET card_balance = card_balance - 1, total_score = ?
+          WHERE user_id = ?;
+        `;
+        pool.query(updateUserScoreQuery, [score, user_id], (err, result) => {
+          if (err) {
+            console.error("Error Updating User data:", err);
+            return res.status(500).json({ error: err.message });
+          }
+          return res.status(200).json({
+            ...result
+          });
+        });
+      });
+    });
+  });
+
+  // const updateUserScoreQuery = `
+  //   UPDATE Users
+  //   SET total_score = ?
+  //   WHERE daily_id = ?;
+  // `;
+
+  // pool.query(updateUserScoreQuery, [daily_id, score], (err, leaderBoardResult) => {
+  //   if (err) {
+  //     console.error("Error Getting leaderboard data:", err);
+  //     return res.status(500).json({ error: err.message });
+  //   }
+
+  //   const updateDailyScoreQuery = `
+  //     UPDATE Daily
+  //     SET cards_played = ?
+  //     WHERE daily_id = ?;
+  //   `;
+
+  //   pool.query(updateDailyScoreQuery, [cards_played, daily_id], (err) => {
+  //     if (err) {
+  //       console.error("Error Updating Daily Score:", err);
+  //       return res.status(500).json({ error: err.message });
+  //     }
+
+  //     return res.status(200).json({
+  //       ...leaderBoardResult
+  //     });
+  //   });
+  // });
+});
+
 // Fechamento gracioso da aplicação e conexão com o banco
 process.on('SIGINT', () => {
   console.log('Gracefully shutting down...');
