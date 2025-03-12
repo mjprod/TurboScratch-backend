@@ -373,11 +373,11 @@ app.post("/leader_board", (req, res) => {
   });
 });
 
-app.post("/update_score", (req, res) => {
-  const { user_id, beta_block_id, score } = req.body;
+app.post("/update_card_played", (req, res) => {
+  const { user_id, beta_block_id } = req.body;
 
-  if (!user_id || !beta_block_id || !score) {
-    return res.status(400).json({ error: "user_id, beta_block_id and score are required" });
+  if (!user_id || !beta_block_id) {
+    return res.status(400).json({ error: "user_id, beta_block_id are required" });
   }
   const betaBlockQuery = `
     SELECT *
@@ -425,10 +425,10 @@ app.post("/update_score", (req, res) => {
         }
         const updateUserScoreQuery = `
           UPDATE Users
-          SET card_balance = card_balance - 1, total_score = ?
+          SET card_balance = card_balance - 1,
           WHERE user_id = ?;
         `;
-        pool.query(updateUserScoreQuery, [score, user_id], (err, result) => {
+        pool.query(updateUserScoreQuery, [user_id], (err, result) => {
           if (err) {
             console.error("Error Updating User data:", err);
             return res.status(500).json({ error: err.message });
@@ -440,36 +440,27 @@ app.post("/update_score", (req, res) => {
       });
     });
   });
+});
 
-  // const updateUserScoreQuery = `
-  //   UPDATE Users
-  //   SET total_score = ?
-  //   WHERE daily_id = ?;
-  // `;
-
-  // pool.query(updateUserScoreQuery, [daily_id, score], (err, leaderBoardResult) => {
-  //   if (err) {
-  //     console.error("Error Getting leaderboard data:", err);
-  //     return res.status(500).json({ error: err.message });
-  //   }
-
-  //   const updateDailyScoreQuery = `
-  //     UPDATE Daily
-  //     SET cards_played = ?
-  //     WHERE daily_id = ?;
-  //   `;
-
-  //   pool.query(updateDailyScoreQuery, [cards_played, daily_id], (err) => {
-  //     if (err) {
-  //       console.error("Error Updating Daily Score:", err);
-  //       return res.status(500).json({ error: err.message });
-  //     }
-
-  //     return res.status(200).json({
-  //       ...leaderBoardResult
-  //     });
-  //   });
-  // });
+app.post("/update_score", (req, res) => {
+  const { user_id, score } = req.body;
+  if (!user_id || !score) {
+    return res.status(400).json({ error: "user_id & score are required" });
+  }
+  const updateUserScoreQuery = `
+    UPDATE Users
+    SET total_score = ?
+    WHERE user_id = ?;
+  `;
+  pool.query(updateUserScoreQuery, [score, user_id], (err, result) => {
+    if (err) {
+      console.error("Error Updating User data:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    return res.status(200).json({
+      ...result
+    });
+  });
 });
 
 // Fechamento gracioso da aplicação e conexão com o banco
