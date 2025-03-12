@@ -425,7 +425,7 @@ app.post("/update_card_played", (req, res) => {
         }
         const updateUserScoreQuery = `
           UPDATE Users
-          SET card_balance = card_balance - 1,
+          SET card_balance = card_balance - 1
           WHERE user_id = ?;
         `;
         pool.query(updateUserScoreQuery, [user_id], (err, result) => {
