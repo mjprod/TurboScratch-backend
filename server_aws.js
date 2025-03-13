@@ -2,6 +2,7 @@ const express = require("express");
 const mysql = require("mysql2");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const ticket_milestorne = 20000;
 
 const app = express();
 app.use(cors());
@@ -356,12 +357,10 @@ app.post("/betaBlock", (req, res) => {
   const { beta_block_description, date_time_initial, date_time_final } =
     req.body;
   if (!beta_block_description || !date_time_initial || !date_time_final) {
-    return res
-      .status(400)
-      .json({
-        error:
-          "beta_block_description, date_time_initial, and date_time_final are required",
-      });
+    return res.status(400).json({
+      error:
+        "beta_block_description, date_time_initial, and date_time_final are required",
+    });
   }
   const query =
     "INSERT INTO BetaBlock (beta_block_description, date_time_initial, date_time_final) VALUES (?, ?, ?)";
@@ -373,12 +372,10 @@ app.post("/betaBlock", (req, res) => {
         console.error("Database error:", err);
         return res.status(500).json({ error: err.message });
       }
-      res
-        .status(200)
-        .json({
-          message: "BetaBlock record created successfully!",
-          betaBlockId: results.insertId,
-        });
+      res.status(200).json({
+        message: "BetaBlock record created successfully!",
+        betaBlockId: results.insertId,
+      });
     }
   );
 });
@@ -413,12 +410,10 @@ app.post("/game", (req, res) => {
         console.error("Database error:", err);
         return res.status(500).json({ error: err.message });
       }
-      res
-        .status(200)
-        .json({
-          message: "Game record created successfully!",
-          gameId: results.insertId,
-        });
+      res.status(200).json({
+        message: "Game record created successfully!",
+        gameId: results.insertId,
+      });
     }
   );
 });
@@ -537,26 +532,33 @@ app.post("/update_score", (req, res) => {
   if (!user_id || !score) {
     return res.status(400).json({ error: "user_id & score are required" });
   }
+  const ticket_balance = Math.floor(score / ticket_milestorne);
   const updateUserScoreQuery = `
     UPDATE Users
-    SET total_score = ?
+    SET total_score = ?, ticket_balance = ?
     WHERE user_id = ?;
   `;
-  pool.query(updateUserScoreQuery, [score, user_id], (err, result) => {
-    if (err) {
-      console.error("Error Updating User data:", err);
-      return res.status(500).json({ error: err.message });
+  pool.query(
+    updateUserScoreQuery,
+    [score, ticket_balance, user_id],
+    (err, result) => {
+      if (err) {
+        console.error("Error Updating User data:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      return res.status(200).json({
+        ...result,
+      });
     }
-    return res.status(200).json({
-      ...result,
-    });
-  });
+  );
 });
 
 app.post("/update_lucky_symbol", (req, res) => {
   const { user_id, lucky_symbol } = req.body;
   if (!user_id || !lucky_symbol) {
-    return res.status(400).json({ error: "user_id & lucky_symbol are required" });
+    return res
+      .status(400)
+      .json({ error: "user_id & lucky_symbol are required" });
   }
   const updateLuckySymbolQuery = `
     UPDATE Users
