@@ -555,7 +555,8 @@ app.post("/update_score", (req, res) => {
 
 app.post("/update_lucky_symbol", (req, res) => {
   const { user_id, lucky_symbol } = req.body;
-  if (!user_id || !lucky_symbol) {
+  if (!user_id || lucky_symbol === undefined || lucky_symbol === null) {
+    console.error("user_id & lucky_symbol are required");
     return res
       .status(400)
       .json({ error: "user_id & lucky_symbol are required" });
