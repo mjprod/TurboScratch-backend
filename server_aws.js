@@ -1,6 +1,8 @@
 const express = require("express");
 const mysql = require("mysql2");
 const bodyParser = require("body-parser");
+const { decreaseUserCardBalance } = require("./helpers");
+
 const cors = require("cors");
 const ticket_milestorne = 20000;
 
@@ -488,16 +490,14 @@ app.post("/update_card_played", (req, res) => {
             dailyBlockResult.cards_played < dailyBlockResult.cards_won
         );
         if (!dailyToDeduct) {
-          return res
-            .status(404)
-            .json({ error: "Daily data with not played cards not found" });
+          return decreaseUserCardBalance(pool, res, user_id);
         }
 
         const updateCardsPlayedQuery = `
-        UPDATE Daily
-        SET cards_played = cards_played + 1
-        WHERE user_id = ? AND daily_id = ?;
-      `;
+          UPDATE Daily
+          SET cards_played = cards_played + 1
+          WHERE user_id = ? AND daily_id = ?;
+        `;
         pool.query(
           updateCardsPlayedQuery,
           [user_id, dailyToDeduct.daily_id],
@@ -506,20 +506,7 @@ app.post("/update_card_played", (req, res) => {
               console.error("Error Updating Daily data:", err);
               return res.status(500).json({ error: err.message });
             }
-            const updateUserScoreQuery = `
-          UPDATE Users
-          SET card_balance = card_balance - 1
-          WHERE user_id = ?;
-        `;
-            pool.query(updateUserScoreQuery, [user_id], (err, result) => {
-              if (err) {
-                console.error("Error Updating User data:", err);
-                return res.status(500).json({ error: err.message });
-              }
-              return res.status(200).json({
-                ...result,
-              });
-            });
+            return decreaseUserCardBalance(pool, res, user_id);
           }
         );
       }
