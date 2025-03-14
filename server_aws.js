@@ -442,12 +442,23 @@ app.post("/leader_board", (req, res) => {
 });
 
 app.post("/update_card_played", (req, res) => {
-  const { user_id, beta_block_id } = req.body;
+  const { user_id, beta_block_id, lucky_symbol_won, number_combination_total } =
+    req.body;
 
-  if (!user_id || !beta_block_id) {
+  if (
+    !user_id ||
+    !beta_block_id ||
+    lucky_symbol_won === undefined ||
+    lucky_symbol_won === null ||
+    number_combination_total === undefined ||
+    number_combination_total === null
+  ) {
     return res
       .status(400)
-      .json({ error: "user_id, beta_block_id are required" });
+      .json({
+        error:
+          "user_id, beta_block_id, lucky_symbol_won & number_combination_total are required",
+      });
   }
   const betaBlockQuery = `
     SELECT *
@@ -459,6 +470,16 @@ app.post("/update_card_played", (req, res) => {
       console.error("Error Getting BetaBlock data:", err);
       return res.status(500).json({ error: err.message });
     }
+    const createGameQuery = `
+      INSERT INTO Game (beta_block_id, user_id, lucky_symbol_won, number_combination_total, number_combination_user_played)
+      VALUES (?, ?, ?, ?, 0)
+    `;
+    pool.query(createGameQuery, [
+      beta_block_id,
+      user_id,
+      lucky_symbol_won,
+      number_combination_total,
+    ]);
     const dailyBlockQuery = `
       SELECT *
       FROM Daily
