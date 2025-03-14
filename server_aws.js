@@ -526,33 +526,33 @@ app.post("/update_card_played", (req, res) => {
                   gameId: createGameResult.insertId,
                 });
               });
-            }
-
-            const updateCardsPlayedQuery = `
-              UPDATE Daily
-              SET cards_played = cards_played + 1
-              WHERE user_id = ? AND daily_id = ?;
-            `;
-            pool.query(
-              updateCardsPlayedQuery,
-              [user_id, dailyToDeduct.daily_id],
-              (err, result) => {
-                if (err) {
-                  console.error("Error Updating Daily data:", err);
-                  return res.status(500).json({ error: err.message });
-                }
-                pool.query(updateUserScoreQuery, [user_id], (err, result) => {
+            } else {
+              const updateCardsPlayedQuery = `
+                UPDATE Daily
+                SET cards_played = cards_played + 1
+                WHERE user_id = ? AND daily_id = ?;
+              `;
+              pool.query(
+                updateCardsPlayedQuery,
+                [user_id, dailyToDeduct.daily_id],
+                (err, result) => {
                   if (err) {
-                    console.error("Error Updating User data:", err);
+                    console.error("Error Updating Daily data:", err);
                     return res.status(500).json({ error: err.message });
                   }
-                  return res.status(200).json({
-                    message: "Successfully Decreased the Card Balance",
-                    gameId: createGameResult.insertId,
+                  pool.query(updateUserScoreQuery, [user_id], (err, result) => {
+                    if (err) {
+                      console.error("Error Updating User data:", err);
+                      return res.status(500).json({ error: err.message });
+                    }
+                    return res.status(200).json({
+                      message: "Successfully Decreased the Card Balance",
+                      gameId: createGameResult.insertId,
+                    });
                   });
-                });
-              }
-            );
+                }
+              );
+            }
           }
         );
       }
@@ -582,15 +582,11 @@ app.post("/update_score", (req, res) => {
     SET number_combination_user_played = ?
     WHERE game_id = ?
   `;
-  pool.query(
-    updateComboPlayedQuery,
-    [combo_played, game_id],
-    (err, result) => {
-      if (err) {
-        console.error("Error Updating Combo Played data:", err);
-      }
+  pool.query(updateComboPlayedQuery, [combo_played, game_id], (err, result) => {
+    if (err) {
+      console.error("Error Updating Combo Played data:", err);
     }
-  );
+  });
   pool.query(
     updateUserScoreQuery,
     [score, ticket_balance, user_id],
