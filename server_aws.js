@@ -453,12 +453,10 @@ app.post("/update_card_played", (req, res) => {
     number_combination_total === undefined ||
     number_combination_total === null
   ) {
-    return res
-      .status(400)
-      .json({
-        error:
-          "user_id, beta_block_id, lucky_symbol_won & number_combination_total are required",
-      });
+    return res.status(400).json({
+      error:
+        "user_id, beta_block_id, lucky_symbol_won & number_combination_total are required",
+    });
   }
   const betaBlockQuery = `
     SELECT *
@@ -474,60 +472,87 @@ app.post("/update_card_played", (req, res) => {
       INSERT INTO Game (beta_block_id, user_id, lucky_symbol_won, number_combination_total, number_combination_user_played)
       VALUES (?, ?, ?, ?, 0)
     `;
-    pool.query(createGameQuery, [
-      beta_block_id,
-      user_id,
-      lucky_symbol_won,
-      number_combination_total,
-    ]);
-    const dailyBlockQuery = `
-      SELECT *
-      FROM Daily
-      WHERE user_id = ?
-      AND create_at BETWEEN ? AND ? 
-      ORDER BY create_at ASC;
-    `;
-    if (betaBlockQuery.length === 0) {
-      return res.status(404).json({ error: "Beta Block not found" });
-    }
     pool.query(
-      dailyBlockQuery,
-      [
-        user_id,
-        betaBlockResult[0].date_time_initial,
-        betaBlockResult[0].date_time_final,
-      ],
-      (err, dailyBlockResult) => {
+      createGameQuery,
+      [beta_block_id, user_id, lucky_symbol_won, number_combination_total],
+      (err, createGameResult) => {
         if (err) {
-          console.error("Error Getting Daily data:", err);
+          console.error("Error Creating Game:", err);
           return res.status(500).json({ error: err.message });
         }
-        if (dailyBlockResult.length === 0) {
-          return res.status(404).json({ error: "Daily Data not found" });
-        }
-
-        const dailyToDeduct = dailyBlockResult.find(
-          (dailyBlockResult) =>
-            dailyBlockResult.cards_played < dailyBlockResult.cards_won
-        );
-        if (!dailyToDeduct) {
-          return decreaseUserCardBalance(pool, res, user_id);
-        }
-
-        const updateCardsPlayedQuery = `
-          UPDATE Daily
-          SET cards_played = cards_played + 1
-          WHERE user_id = ? AND daily_id = ?;
+        const dailyBlockQuery = `
+          SELECT *
+          FROM Daily
+          WHERE user_id = ?
+          AND create_at BETWEEN ? AND ? 
+          ORDER BY create_at ASC;
         `;
+        if (betaBlockQuery.length === 0) {
+          return res.status(404).json({ error: "Beta Block not found" });
+        }
         pool.query(
-          updateCardsPlayedQuery,
-          [user_id, dailyToDeduct.daily_id],
-          (err, result) => {
+          dailyBlockQuery,
+          [
+            user_id,
+            betaBlockResult[0].date_time_initial,
+            betaBlockResult[0].date_time_final,
+          ],
+          (err, dailyBlockResult) => {
             if (err) {
-              console.error("Error Updating Daily data:", err);
+              console.error("Error Getting Daily data:", err);
               return res.status(500).json({ error: err.message });
             }
-            return decreaseUserCardBalance(pool, res, user_id);
+            if (dailyBlockResult.length === 0) {
+              return res.status(404).json({ error: "Daily Data not found" });
+            }
+
+            const dailyToDeduct = dailyBlockResult.find(
+              (dailyBlockResult) =>
+                dailyBlockResult.cards_played < dailyBlockResult.cards_won
+            );
+            const updateUserScoreQuery = `
+              UPDATE Users
+              SET card_balance = card_balance - 1
+              WHERE user_id = ?;
+            `;
+            if (!dailyToDeduct) {
+              pool.query(updateUserScoreQuery, [user_id], (err, result) => {
+                if (err) {
+                  console.error("Error Updating User data:", err);
+                  return res.status(500).json({ error: err.message });
+                }
+                return res.status(200).json({
+                  message: "Successfully Decreased the Card Balance",
+                  gameId: createGameResult.insertId,
+                });
+              });
+            }
+
+            const updateCardsPlayedQuery = `
+              UPDATE Daily
+              SET cards_played = cards_played + 1
+              WHERE user_id = ? AND daily_id = ?;
+            `;
+            pool.query(
+              updateCardsPlayedQuery,
+              [user_id, dailyToDeduct.daily_id],
+              (err, result) => {
+                if (err) {
+                  console.error("Error Updating Daily data:", err);
+                  return res.status(500).json({ error: err.message });
+                }
+                pool.query(updateUserScoreQuery, [user_id], (err, result) => {
+                  if (err) {
+                    console.error("Error Updating User data:", err);
+                    return res.status(500).json({ error: err.message });
+                  }
+                  return res.status(200).json({
+                    message: "Successfully Decreased the Card Balance",
+                    gameId: createGameResult.insertId,
+                  });
+                });
+              }
+            );
           }
         );
       }
@@ -536,8 +561,14 @@ app.post("/update_card_played", (req, res) => {
 });
 
 app.post("/update_score", (req, res) => {
-  const { user_id, score } = req.body;
-  if (!user_id || !score) {
+  const { user_id, score, combo_played, game_id } = req.body;
+  if (
+    !user_id ||
+    !score ||
+    combo_played === undefined ||
+    combo_played === null ||
+    !game_id
+  ) {
     return res.status(400).json({ error: "user_id & score are required" });
   }
   const ticket_balance = Math.floor(score / ticket_milestorne);
@@ -546,6 +577,20 @@ app.post("/update_score", (req, res) => {
     SET total_score = ?, ticket_balance = ?
     WHERE user_id = ?;
   `;
+  const updateComboPlayedQuery = `
+    UPDATE Game 
+    SET number_combination_user_played = ?
+    WHERE game_id = ?
+  `;
+  pool.query(
+    updateComboPlayedQuery,
+    [combo_played, game_id],
+    (err, result) => {
+      if (err) {
+        console.error("Error Updating Combo Played data:", err);
+      }
+    }
+  );
   pool.query(
     updateUserScoreQuery,
     [score, ticket_balance, user_id],
