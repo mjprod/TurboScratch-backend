@@ -7,16 +7,15 @@ function getCurrentWeekStartDate() {
   const diff = now.getDate() - day;
   const sunday = new Date(now.setDate(diff));
   sunday.setHours(0, 0, 0, 0);
-  return sunday.toISOString().split('T')[0];
+  return sunday.toISOString().split('Z')[0];
 }
 
-const leaderboardCronJob = () => {
+const startLeaderboardCronJob = () => {
   cron.schedule('0 18 * * 0', async () => {
     const weekStartDate = getCurrentWeekStartDate();
     try {
       const connection = pool.getConnection();
-
-      // SQL to insert a snapshot into your leaderboard table.
+      
       const sql = `
         INSERT INTO Leaderboard (user_id, week_start_date, score, current_rank, previous_rank)
         SELECT 
@@ -40,4 +39,4 @@ const leaderboardCronJob = () => {
   })
 };
 
-module.exports = leaderboardCronJob;
+module.exports = startLeaderboardCronJob;
