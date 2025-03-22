@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../configs/db");
 const router = express.Router();
+const crypto = require("../utils/crypto");
 
 router.get("/", (req, res) => {
     res.status(200).json({ message: "Server is healthy!" });
@@ -16,11 +17,15 @@ router.get("/db", (req, res) => {
 });
 
 router.post("/echo", (req, res) => {
-    const { message } = req.body;
+    const {data} = req.body;
+    if (!data) {
+        return res.status(400).json({ error: "Data is required" });
+    }
+    const message = crypto.decrypt(data)
     if (!message) {
         return res.status(400).json({ error: "Message is required" });
     }
-    res.status(200).json({ response: `Received: ${message}` });
+    res.status(200).json(crypto.encrypt({ response: `Received: ${'message'}` }));
 });
 
 module.exports = router;
