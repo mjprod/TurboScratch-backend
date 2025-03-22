@@ -29,7 +29,11 @@ function encrypt(data) {
 }
 
 function decrypt(encryptedData) {
-  const [ivHex, encrypted] = encryptedData.split(':');
+  const parts = encryptedData.split(':');
+  if (parts.length !== 2) {
+    throw new Error('The encrypted data is not in the expected format.');
+  }
+  const [ivHex, encrypted] = parts;
   const iv = Buffer.from(ivHex, 'hex');
 
   const secretKey = Buffer.from(secretKeyHex, 'hex');
@@ -49,10 +53,16 @@ function hash(data) {
   return crypto.createHash(hashingAlgorithm).update(data).digest('hex');
 }
 
+function generateApiKey(length = 32) {
+  return crypto.randomBytes(length).toString('hex');
+}
+
+
 module.exports = {
   encrypt,
   decrypt,
-  hash
+  hash,
+  generateApiKey,
 };
 
 // Example usage:
@@ -62,3 +72,7 @@ module.exports = {
 
 // const decryptedData = decrypt(encryptedData);
 // console.log("Decrypted:", decryptedData);
+
+
+// const apiKey = generateApiKey();
+// console.log("API Key:", apiKey);

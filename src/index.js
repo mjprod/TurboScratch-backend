@@ -2,11 +2,20 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const startLeaderboardCronJob = require("./corns/leaderboard");
+const apiKeyMiddleware = require('./middlewares/auth');
 
 const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
+
+
+app.use(apiKeyMiddleware);
+
+app.get('/', (req, res) => {
+    res.send('Hello, you are authorized!');
+});
+
 
 app.use("/health", require("./routes/health"));
 app.use("/users", require("./routes/users"));
