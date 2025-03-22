@@ -17,7 +17,7 @@ if (fs.existsSync(envFile)) {
 console.log('Loading environment variables from:', fileToUse);;
 dotenv.config({ path: fileToUse });
 
-const pool = require("./src/config/db");
+const pool = require("./src/configs/db");
 const app = require("./src/index");
 
 const port = process.env.PORT || 8083;

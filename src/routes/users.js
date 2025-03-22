@@ -1,5 +1,5 @@
 const express = require("express");
-const pool = require("../config/db");
+const pool = require("../configs/db");
 const router = express.Router();
 
 // Endpoint to fetch user details by user_id
