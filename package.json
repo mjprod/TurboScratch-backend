@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start-production": "NODE_ENV=production node ./src/server_local.js",
-    "start": "NODE_ENV=development node ./src/server_local.js"
+    "start-production": "NODE_ENV=production node ./src/index.js",
+    "start": "NODE_ENV=development node ./src/index.js"
   },
   "keywords": [],
   "author": "",
