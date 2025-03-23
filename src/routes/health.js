@@ -17,15 +17,11 @@ router.get("/db", (req, res) => {
 });
 
 router.post("/echo", (req, res) => {
-    const {data} = req.body;
+    const { data } = req.body;
     if (!data) {
-        return res.status(400).json({ error: "Data is required" });
-    }
-    const message = crypto.decrypt(data)
-    if (!message) {
         return res.status(400).json({ error: "Message is required" });
     }
-    res.status(200).json(crypto.encrypt({ response: `Received: ${'message'}` }));
+    res.status(200).json(`Received: ${data}` );
 });
 
 module.exports = router;
