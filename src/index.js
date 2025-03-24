@@ -22,6 +22,7 @@ app.get('/', (req, res) => {
 app.use("/health", require("./routes/health"));
 app.use("/users", require("./routes/users"));
 app.use("/daily", require("./routes/daily"));
+app.use("/game", require("./routes/game"));
 app.use("/leaderboard", require("./routes/leaderboard"));
 app.use("/betablock", require("./routes/betablock"));
 

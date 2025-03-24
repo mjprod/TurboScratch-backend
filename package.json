@@ -6,7 +6,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start-production": "NODE_ENV=production node index.js",
     "start": "NODE_ENV=development node index.js",
-    "clean": "rm -rf node_modules && rm package-lock.json"
+    "clean": "rm -rf node_modules && rm package-lock.json && rm yarn.lock"
   },
   "keywords": [],
   "author": "",
