@@ -6,7 +6,11 @@ const router = express.Router();
 // To register a new user, include 'name' and 'email' as query parameters (e.g. /users/1?name=John&email=john@example.com)
 router.post("/", (req, res) => {
     const { user_id, name, email } = req.body;
-
+    if (!user_id || !name || !email) {
+        return res
+            .status(400)
+            .json({ error: "beta_block_id and user_id are required" });
+    }
     // Get current date/time in UTC in the format "YYYY-MM-DD HH:MM:SS"
     const nowUTC = new Date().toISOString().slice(0, 19).replace("T", " ");
     console.log("nowUTC:", nowUTC);

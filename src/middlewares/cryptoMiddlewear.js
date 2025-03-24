@@ -6,7 +6,7 @@ function cryptoMiddleware(req, res, next) {
         if (!decryptedData) {
             return res.status(400).json({ error: "Invalid or corrupted encrypted data" });
         }
-        req.body.data = decryptedData;
+        req.body = JSON.parse(decryptedData);
     }
 
     const originalJson = res.json;

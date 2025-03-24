@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const algorithm = 'aes-256-cbc';
 const hashingAlgorithm = 'sha256';
 
-const secretKeyHex = process.env.SECRET_KEY;
+const SECRET_KEY = process.env.SECRET_KEY;
 
 function encrypt(data) {
   var dataToEncrypt;
@@ -18,14 +18,14 @@ function encrypt(data) {
   }
 
   const iv = crypto.randomBytes(16);
-  const secretKey = Buffer.from(secretKeyHex, 'hex');
+  const secretKey = Buffer.from(SECRET_KEY, 'base64');
 
   const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
 
-  let encrypted = cipher.update(dataToEncrypt, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
+  let encrypted = cipher.update(dataToEncrypt, 'utf8', 'base64');
+  encrypted += cipher.final('base64');
 
-  return iv.toString('hex') + ':' + encrypted;
+  return iv.toString('base64') + ':' + encrypted;
 }
 
 function decrypt(encryptedData) {
@@ -33,13 +33,13 @@ function decrypt(encryptedData) {
   if (parts.length !== 2) {
     throw new Error('The encrypted data is not in the expected format.');
   }
-  const [ivHex, encrypted] = parts;
-  const iv = Buffer.from(ivHex, 'hex');
+  const [ivBase64, encrypted] = parts;
+  const iv = Buffer.from(ivBase64, 'base64');
 
-  const secretKey = Buffer.from(secretKeyHex, 'hex');
+  const secretKey = Buffer.from(SECRET_KEY, 'base64');
   const decipher = crypto.createDecipheriv(algorithm, secretKey, iv);
 
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  let decrypted = decipher.update(encrypted, 'base64', 'utf8');
   decrypted += decipher.final('utf8');
 
   return decrypted;
@@ -50,11 +50,11 @@ function hash(data) {
 
   if (typeof data === 'string' || data instanceof String) return new Error("Data should only be a string.");
 
-  return crypto.createHash(hashingAlgorithm).update(data).digest('hex');
+  return crypto.createHash(hashingAlgorithm).update(data).digest('base64');
 }
 
 function generateApiKey(length = 32) {
-  return crypto.randomBytes(length).toString('hex');
+  return crypto.randomBytes(length).toString('base64');
 }
 
 
