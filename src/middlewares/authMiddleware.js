@@ -1,11 +1,23 @@
-const API_KEY = process.env.API_KEY;
+const jwt = require("jsonwebtoken");
+const { JWT_SECRET } = require("../configs/jwt");
 
-function apiKeyMiddleware(req, res, next) {
-    const apiKey = req.header('x-api-key');
-    if (!apiKey || apiKey !== API_KEY) {
-        return res.status(401).json({ error: 'Unauthorized: Invalid API key' });
+function authMiddleware(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) {
+        return res.status(401).json({ error: "No token provided" });
     }
-    next();
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+        return res.status(401).json({ error: "Token format is invalid" });
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).json({ error: "Failed to authenticate token" });
+        }
+        req.user = decoded;
+        next();
+    });
 }
 
-module.exports = apiKeyMiddleware;
+module.exports = authMiddleware;
