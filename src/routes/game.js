@@ -235,7 +235,7 @@ router.post("/update_card_balance", (req, res) => {
     }
     const updateCardBalanceQuery = `
       UPDATE Users
-      SET card_balance = ?
+      SET card_balance = card_balance + ?
       WHERE user_id = ?;
     `;
     pool.query(updateCardBalanceQuery, [increase_card_balance, user_id], (err, result) => {
