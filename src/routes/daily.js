@@ -7,7 +7,6 @@ router.post("/question", (req, res) => {
     if (!user_id) {
         return res.status(400).json({ error: "user_id is required" });
     }
-
     // 1. Determine the new question_id for the given user from the Answers table.
     // This query gets the maximum question_id currently stored for that user.
     const selectMaxQuery =
