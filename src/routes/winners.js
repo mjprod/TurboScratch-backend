@@ -1,9 +1,8 @@
 const express = require("express");
 const pool = require("../configs/db");
 const router = express.Router();
-const jwt = require("jsonwebtoken");
 
-router.post("/select_winner", (req, res) => {
+router.get("/", (req, res) => {
     // Get current date/time in UTC in the format "YYYY-MM-DD HH:MM:SS"
     const nowUTC = new Date().toISOString().slice(0, 19).replace("T", " ");
     console.log("nowUTC:", nowUTC);
