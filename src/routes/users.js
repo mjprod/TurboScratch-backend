@@ -197,12 +197,31 @@ function fetchDailyDataAndReturn(user, activeCampaign, res) {
             console.log("Daily data grouped by week:", transformedResults);
             const token = jwt.sign({ user_id: user.user_id, email: user.email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRES });
 
+            const now = new Date();
+            const options = { timeZone: "Australia/Sydney", hour12: false, weekday: "short", hour: "numeric" };
+            const parts = new Intl.DateTimeFormat("en-AU", options).formatToParts(now);
+            const weekday = parts.find(p => p.type === "weekday").value.toLowerCase();
+            const hour = parseInt(parts.find(p => p.type === "hour").value, 10);
+
+            let time_result = "";
+            if (weekday !== "sun" || hour < 18) {
+                time_result = "online";
+            } else if (hour === 18) {
+                time_result = "drawing";
+            } else if (hour >= 19 && hour < 24) {
+                time_result = "check winner";
+                // TODO: check winner
+            } else {
+                time_result = "Time out of expected range";
+            }
+
             return res.status(200).json({
                 user,
                 daily: transformedResults,
                 total_weeks: totalWeeks,
                 current_week: currentWeek,
                 token: token,
+                time_result: time_result
             });
         }
     );
