@@ -1,7 +1,7 @@
 const express = require("express");
 const pool = require("../configs/db");
 const router = express.Router();
-const {ticket_milestorne} = require("../utils/constants");;
+const { ticket_milestorne } = require("../utils/constants");;
 
 router.post("/", (req, res) => {
     const {
@@ -215,6 +215,30 @@ router.post("/update_lucky_symbol", (req, res) => {
       WHERE user_id = ?;
     `;
     pool.query(updateLuckySymbolQuery, [lucky_symbol, user_id], (err, result) => {
+        if (err) {
+            console.error("Error Updating User data:", err);
+            return res.status(500).json({ error: err.message });
+        }
+        return res.status(200).json({
+            ...result,
+        });
+    });
+});
+
+router.post("/update_card_balance", (req, res) => {
+    const { user_id, increase_card_balance } = req.body;
+    if (!user_id || increase_card_balance === undefined || increase_card_balance === null) {
+        console.error("user_id & card_balance are required");
+        return res
+            .status(400)
+            .json({ error: "user_id & card_balance are required" });
+    }
+    const updateCardBalanceQuery = `
+      UPDATE Users
+      SET card_balance = ?
+      WHERE user_id = ?;
+    `;
+    pool.query(updateCardBalanceQuery, [increase_card_balance, user_id], (err, result) => {
         if (err) {
             console.error("Error Updating User data:", err);
             return res.status(500).json({ error: err.message });
