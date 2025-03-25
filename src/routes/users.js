@@ -1,6 +1,9 @@
 const express = require("express");
 const pool = require("../configs/db");
 const router = express.Router();
+const jwt = require("jsonwebtoken");
+
+const { JWT_SECRET, TOKEN_EXPIRES } = require("../configs/jwt");
 
 // Endpoint to fetch user details by user_id
 // To register a new user, include 'name' and 'email' as query parameters (e.g. /users/1?name=John&email=john@example.com)
@@ -192,11 +195,14 @@ function fetchDailyDataAndReturn(user, activeCampaign, res) {
             });
 
             console.log("Daily data grouped by week:", transformedResults);
+            const token = jwt.sign({ user_id: user.user_id, email: user.email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRES });
+
             return res.status(200).json({
                 user,
                 daily: transformedResults,
                 total_weeks: totalWeeks,
                 current_week: currentWeek,
+                token: token,
             });
         }
     );

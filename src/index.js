@@ -10,8 +10,6 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-
-app.use(apiKeyMiddleware);
 app.use(cryptoMiddleware)
 
 app.get('/', (req, res) => {
@@ -21,10 +19,10 @@ app.get('/', (req, res) => {
 
 app.use("/health", require("./routes/health"));
 app.use("/users", require("./routes/users"));
-app.use("/daily", require("./routes/daily"));
-app.use("/game", require("./routes/game"));
-app.use("/leaderboard", require("./routes/leaderboard"));
-app.use("/betablock", require("./routes/betablock"));
+app.use("/daily", apiKeyMiddleware, require("./routes/daily"));
+app.use("/game", apiKeyMiddleware, require("./routes/game"));
+app.use("/leaderboard", apiKeyMiddleware, require("./routes/leaderboard"));
+app.use("/betablock", apiKeyMiddleware, require("./routes/betablock"));
 
 startLeaderboardCronJob();
 
