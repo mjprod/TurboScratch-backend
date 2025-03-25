@@ -21,7 +21,24 @@ router.post("/echo", (req, res) => {
     if (!data) {
         return res.status(400).json({ error: "Message is required" });
     }
-    res.status(200).json(`Received: ${data}` );
+    res.status(200).json(`Received: ${data}`);
+});
+
+router.get('/time', (req, res) => {
+    const date = new Date();
+    const options = {
+        timeZone: "Australia/Brisbane",
+        hour12: false,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+    };
+
+    const australianTime = date.toLocaleString("en-AU", options);
+    res.send(`Current Australian Time: ${australianTime}`);
 });
 
 module.exports = router;
