@@ -3,8 +3,8 @@ const pool = require("../configs/db");
 const router = express.Router();
 
 router.post("/", (req, res) => {
-    const { limit = 100, offset = 0 } = req.body;
-
+    const { limit = 100, page = 1 } = req.body;
+    var offset = page;
     const getLeaderBoardQuery = `
         SELECT user_id,
         week_start_date,
@@ -21,16 +21,32 @@ router.post("/", (req, res) => {
         LIMIT ? OFFSET ?;
     `;
 
-    pool.query(getLeaderBoardQuery, [limit, offset], (err, leaderBoardResult) => {
+    if (page > 1) offset -= 1
+
+    const countQuery = 'SELECT COUNT(*) as total FROM Leaderboard';
+
+    pool.query(countQuery, (err, countResult) => {
         if (err) {
-            console.error("Error Getting leaderboard data:", err);
+            console.error("Error fetching count:", err);
             return res.status(500).json({ error: err.message });
         }
+        const totalCount = countResult[0].total;
 
-        return res.status(200).json({
-            ...leaderBoardResult,
+        pool.query(getLeaderBoardQuery, [limit, offset], (err, leaderBoardResult) => {
+            if (err) {
+                console.error("Error fetching leaderboard data:", err);
+                return res.status(500).json({ error: err.message });
+            }
+
+            const totalPages = Math.ceil(totalCount / limit);
+            return res.status(200).json({
+                totalPages,
+                currentPage: page,
+                data: leaderBoardResult
+            });
         });
     });
+    
 });
 
 module.exports = router;
