@@ -3,7 +3,7 @@ const pool = require("../configs/db");
 const router = express.Router();
 
 router.post("/", (req, res) => {
-    const { limit = 100 } = req.body;
+    const { limit = 100, offset = 0 } = req.body;
 
     const getLeaderBoardQuery = `
         SELECT user_id,
@@ -18,10 +18,10 @@ router.post("/", (req, res) => {
             ELSE 'same'
         END AS trend
         FROM Leaderboard
-        LIMIT ?;
+        LIMIT ? OFFSET ?;
     `;
 
-    pool.query(getLeaderBoardQuery, [limit], (err, leaderBoardResult) => {
+    pool.query(getLeaderBoardQuery, [limit, offset], (err, leaderBoardResult) => {
         if (err) {
             console.error("Error Getting leaderboard data:", err);
             return res.status(500).json({ error: err.message });
