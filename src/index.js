@@ -24,6 +24,8 @@ app.use("/game", apiKeyMiddleware, require("./routes/game"));
 app.use("/leaderboard", apiKeyMiddleware, require("./routes/leaderboard"));
 app.use("/betablock", apiKeyMiddleware, require("./routes/betablock"));
 app.use("/winners", apiKeyMiddleware, require("./routes/winners"));
+app.use("/login", require("./routes/login"));
+
 startLeaderboardCronJob();
 
 module.exports = app;
