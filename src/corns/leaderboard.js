@@ -20,13 +20,13 @@ const startLeaderboardCronJob = () => {
         INSERT INTO Leaderboard (user_id, week_start_date, score, current_rank, previous_rank)
         SELECT 
             user.user_id,
-            '2025-03-16' AS week_start_date,
+            ? AS week_start_date,
             user.total_score,
             RANK() OVER (ORDER BY user.total_score DESC) AS current_rank,
             (SELECT current_rank 
             FROM Leaderboard 
             WHERE user_id = user.user_id 
-            AND week_start_date = DATE_SUB('2025-03-16', INTERVAL 7 DAY)
+            AND week_start_date = DATE_SUB(?, INTERVAL 7 DAY)
             ) AS previous_rank
         FROM Users user;
     `;
