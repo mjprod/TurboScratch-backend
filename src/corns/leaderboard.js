@@ -1,14 +1,17 @@
-const cron = require('node-cron');
-const pool = require('../configs/db');
-const { getCurrentWeekStartDate } = require('../utils/datetime');
+const cron = require("node-cron");
+const pool = require("../configs/db");
+const { getCurrentWeekStartDate } = require("../utils/datetime");
 
-const startLeaderboardCronJob = () => {
-  cron.schedule('0 18 * * 0', async () => {
+const startLeaderboardCronJob = (dateTime = "0 18 * * 0") => {
+  cron.schedule(dateTime, async () => {
     const weekStartDate = getCurrentWeekStartDate();
     try {
-      const connection = pool.getConnection();
-      
-      const sql = `
+      pool.getConnection((err, connection) => {
+        if (err) {
+          console.error("Error connecting to database:", err);
+          return;
+        }
+        const sql = `
         INSERT INTO Leaderboard (user_id, week_start_date, score, current_rank, previous_rank)
         SELECT 
             user.user_id,
@@ -22,13 +25,17 @@ const startLeaderboardCronJob = () => {
             ) AS previous_rank
         FROM Users user;
     `;
-      await connection.execute(sql, [weekStartDate, weekStartDate]);
-      connection.release();
-      console.log(`Weekly snapshot inserted for week starting ${weekStartDate}`);
+        connection.execute(sql, [weekStartDate, weekStartDate]);
+        connection.release();
+        console.log(
+          `Weekly snapshot inserted for week starting ${weekStartDate}`
+        );
+      });
+      console.log(`Running cron job at ${new Date().toISOString()}`);
     } catch (error) {
-      console.error('Error updating weekly leaderboard snapshot:', error);
+      console.error("Error updating weekly leaderboard snapshot:", error);
     }
-  })
+  });
 };
 
 module.exports = startLeaderboardCronJob;

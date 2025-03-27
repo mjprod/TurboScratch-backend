@@ -1,6 +1,7 @@
 SELECT * FROM Users;
 SELECT * FROM Leaderboard;
 
+
 CREATE TABLE Leaderboard (
     leaderboard_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -95,3 +96,15 @@ FROM Leaderboard l
 JOIN computed_ranks cr ON l.user_id = cr.user_id
 ORDER BY cr.computed_rank
 LIMIT 10 OFFSET 0;
+
+-- Migration Leaderboard 
+SET SQL_SAFE_UPDATES = 0;
+DELETE L1
+FROM Leaderboard L1
+INNER JOIN Leaderboard L2 
+  ON L1.user_id = L2.user_id
+  AND L1.week_start_date = L2.week_start_date
+  AND L1.leaderboard_id > L2.leaderboard_id;
+  
+ALTER TABLE Leaderboard
+ADD CONSTRAINT unique_user_week UNIQUE (user_id, week_start_date);
