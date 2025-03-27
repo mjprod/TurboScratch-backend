@@ -1,14 +1,6 @@
 const cron = require('node-cron');
 const pool = require('../configs/db');
-
-function getCurrentWeekStartDate() {
-  const now = new Date();
-  const day = now.getDay();
-  const diff = now.getDate() - day;
-  const sunday = new Date(now.setDate(diff));
-  sunday.setHours(0, 0, 0, 0);
-  return sunday.toISOString().split('Z')[0];
-}
+const { getCurrentWeekStartDate } = require('../utils/datetime');
 
 const startLeaderboardCronJob = () => {
   cron.schedule('0 18 * * 0', async () => {
