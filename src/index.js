@@ -24,7 +24,7 @@ router.use('/users', require('./routes/users'));
 router.use('/daily', apiKeyMiddleware, require('./routes/daily'));
 router.use('/game', apiKeyMiddleware, require('./routes/game'));
 router.use('/leaderboard', apiKeyMiddleware, require('./routes/leaderboard'));
-router.use('/betablock', apiKeyMiddleware, require('./routes/betablock'));
+router.use('/betablocks', require('./routes/betablocks'));
 router.use('/winners', apiKeyMiddleware, require('./routes/winners'));
 router.use('/login', require('./routes/login'));
 
