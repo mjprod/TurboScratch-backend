@@ -1,23 +1,15 @@
 const express = require("express");
 const pool = require("../configs/db");
 const router = express.Router();
-
-function getCurrentWeekStartDate() {
-    const now = new Date();
-    const day = now.getDay();
-    const diff = now.getDate() - day;
-    const sunday = new Date(now.setDate(diff));
-    sunday.setHours(0, 0, 0, 0);
-    return sunday.toISOString().split('Z')[0];
-}
+const {getCurrentWeekStartDate} = require("../utils/datetime");
 
 router.post("/", (req, res) => {
-    const { limit = 100, page = 1 } = req.body;
-    var offset = (page - 1) * limit;;
+  const { limit = 100, page = 1 } = req.body;
+  var offset = (page - 1) * limit;
 
-    const currentWeekStartDate = getCurrentWeekStartDate();
-
-    const getLeaderBoardQuery = `
+  const currentWeekStartDate = getCurrentWeekStartDate();
+  console.log("Current week start date:", currentWeekStartDate);
+  const getLeaderBoardQuery = `
         WITH computed_ranks AS (
             SELECT 
                 user_id,
@@ -41,34 +33,39 @@ router.post("/", (req, res) => {
             END AS trend
         FROM Leaderboard l
         JOIN computed_ranks cr ON l.user_id = cr.user_id
+        WHERE l.week_start_date LIKE ?
         ORDER BY cr.computed_rank
         LIMIT ? OFFSET ?;
     `;
 
-    const countQuery = 'SELECT COUNT(*) as total FROM Leaderboard WHERE week_start_date = ?';
+  const countQuery =
+    "SELECT COUNT(*) as total FROM Leaderboard WHERE week_start_date = ?";
 
-    pool.query(countQuery, [currentWeekStartDate], (err, countResult) => {
+  pool.query(countQuery, [currentWeekStartDate], (err, countResult) => {
+    if (err) {
+      console.error("Error fetching count:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    const totalCount = countResult[0].total;
+
+    pool.query(
+      getLeaderBoardQuery,
+      [currentWeekStartDate, limit, offset],
+      (err, leaderBoardResult) => {
         if (err) {
-            console.error("Error fetching count:", err);
-            return res.status(500).json({ error: err.message });
+          console.error("Error fetching leaderboard data:", err);
+          return res.status(500).json({ error: err.message });
         }
-        const totalCount = countResult[0].total;
-
-        pool.query(getLeaderBoardQuery, [limit, offset], (err, leaderBoardResult) => {
-            if (err) {
-                console.error("Error fetching leaderboard data:", err);
-                return res.status(500).json({ error: err.message });
-            }
-            console.log("Leaderboard result:", leaderBoardResult);
-            const totalPages = Math.ceil(totalCount / limit);
-            return res.status(200).json({
-                totalPages,
-                currentPage: page,
-                data: leaderBoardResult
-            });
+        console.log("Leaderboard result:", leaderBoardResult);
+        const totalPages = Math.ceil(totalCount / limit);
+        return res.status(200).json({
+          totalPages,
+          currentPage: page,
+          data: leaderBoardResult,
         });
-    });
-
+      }
+    );
+  });
 });
 
 module.exports = router;
