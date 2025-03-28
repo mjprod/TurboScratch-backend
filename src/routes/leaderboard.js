@@ -1,7 +1,7 @@
 const express = require("express");
 const pool = require("../configs/db");
 const router = express.Router();
-const {getCurrentWeekStartDate} = require("../utils/datetime");
+const { getCurrentWeekStartDate } = require("../utils/datetime");
 
 router.post("/", (req, res) => {
   const { limit = 100, page = 1 } = req.body;
