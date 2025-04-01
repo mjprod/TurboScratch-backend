@@ -69,7 +69,7 @@ router.post("/insert", (req, res) => {
 router.put("/:id", (req, res) => {
     const { id } = req.params;
     const { beta_block_description, date_time_initial, date_time_final } = req.body;
-    const query = "UPDATE BetaBlocks SET beta_block_description = ?, date_time_initial = ?, date_time_final = ? WHERE beta_block_id = ?";
+    const query = "UPDATE BetaBlocks SET beta_block_description = ?, date_time_initial = ?, date_time_final = ? extended = 'true' WHERE beta_block_id = ?";
     pool.query(query, [beta_block_description, date_time_initial, date_time_final, id], (err, results) => {
         if (err) {
             console.error("Database error:", err);

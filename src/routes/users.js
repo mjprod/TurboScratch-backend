@@ -215,7 +215,8 @@ function fetchDailyDataAndReturn(user, activeCampaign, res) {
                 daily: transformedResults,
                 total_weeks: totalWeeks,
                 current_week: currentWeek,
-                time_result: time_result
+                time_result: time_result,
+                extended: activeCampaign.extended,
             });
         }
     );
