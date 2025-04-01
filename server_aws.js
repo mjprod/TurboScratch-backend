@@ -381,7 +381,7 @@ app.post("/betaBlock", (req, res) => {
   );
 });
 
-// Endpoint para criar um registro na tabela Game
+// Endpoint para criar um registro na tabela Games
 app.post("/game", (req, res) => {
   const {
     beta_block_id,
@@ -395,7 +395,7 @@ app.post("/game", (req, res) => {
       .status(400)
       .json({ error: "beta_block_id and user_id are required" });
   }
-  const query = `INSERT INTO Game (beta_block_id, user_id, lucky_symbol_won, number_combination_total, number_combination_user_played)
+  const query = `INSERT INTO Games (beta_block_id, user_id, lucky_symbol_won, number_combination_total, number_combination_user_played)
                  VALUES (?, ?, ?, ?, ?)`;
   pool.query(
     query,
@@ -412,7 +412,7 @@ app.post("/game", (req, res) => {
         return res.status(500).json({ error: err.message });
       }
       res.status(200).json({
-        message: "Game record created successfully!",
+        message: "Games record created successfully!",
         gameId: results.insertId,
       });
     }
@@ -468,7 +468,7 @@ app.post("/update_card_played", (req, res) => {
       return res.status(500).json({ error: err.message });
     }
     const createGameQuery = `
-      INSERT INTO Game (beta_block_id, user_id, lucky_symbol_won, number_combination_total, number_combination_user_played)
+      INSERT INTO Games (beta_block_id, user_id, lucky_symbol_won, number_combination_total, number_combination_user_played)
       VALUES (?, ?, ?, ?, 0)
     `;
     pool.query(
@@ -476,7 +476,7 @@ app.post("/update_card_played", (req, res) => {
       [beta_block_id, user_id, lucky_symbol_won, number_combination_total],
       (err, createGameResult) => {
         if (err) {
-          console.error("Error Creating Game:", err);
+          console.error("Error Creating Games:", err);
           return res.status(500).json({ error: err.message });
         }
         const dailyBlockQuery = `
@@ -577,7 +577,7 @@ app.post("/update_score", (req, res) => {
     WHERE user_id = ?;
   `;
   const updateComboPlayedQuery = `
-    UPDATE Game 
+    UPDATE Games 
     SET number_combination_user_played = ?
     WHERE game_id = ?
   `;

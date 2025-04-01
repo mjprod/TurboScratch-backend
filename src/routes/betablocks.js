@@ -110,7 +110,7 @@ router.get("/:id/stats", (req, res) => {
             SUM(CASE WHEN number_combination_total = 2 THEN 1 ELSE 0 END) AS x2_count,
             SUM(CASE WHEN number_combination_total = 1 THEN 1 ELSE 0 END) AS x1_count,
             SUM(CASE WHEN number_combination_total = 0 THEN 1 ELSE 0 END) AS none_count
-        FROM turbo_scratch.Game
+        FROM turbo_scratch.Games
         GROUP BY beta_block_id
         )
         SELECT *
