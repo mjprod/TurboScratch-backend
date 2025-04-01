@@ -7,8 +7,6 @@ router.post("/", (req, res) => {
   const { limit = 100, page = 1 } = req.body;
   var offset = (page - 1) * limit;
 
-  const currentWeekStartDate = getCurrentWeekStartDate();
-  console.log("Current week start date:", currentWeekStartDate);
   const getLeaderBoardQuery = `
         WITH computed_ranks AS (
             SELECT 
@@ -33,38 +31,23 @@ router.post("/", (req, res) => {
             END AS trend
         FROM Leaderboard l
         JOIN computed_ranks cr ON l.user_id = cr.user_id
-        WHERE l.week_start_date LIKE ?
+        WHERE l.week_start_date = (SELECT MAX(week_start_date) FROM Leaderboard)
         ORDER BY cr.computed_rank
         LIMIT ? OFFSET ?;
     `;
 
-  const countQuery =
-    "SELECT COUNT(*) as total FROM Leaderboard WHERE week_start_date = ?";
-
-  pool.query(countQuery, [currentWeekStartDate], (err, countResult) => {
+  pool.query(getLeaderBoardQuery, [limit, offset], (err, leaderBoardResult) => {
     if (err) {
-      console.error("Error fetching count:", err);
+      console.error("Error fetching leaderboard data:", err);
       return res.status(500).json({ error: err.message });
     }
-    const totalCount = countResult[0].total;
-
-    pool.query(
-      getLeaderBoardQuery,
-      [currentWeekStartDate, limit, offset],
-      (err, leaderBoardResult) => {
-        if (err) {
-          console.error("Error fetching leaderboard data:", err);
-          return res.status(500).json({ error: err.message });
-        }
-        console.log("Leaderboard result:", leaderBoardResult);
-        const totalPages = Math.ceil(totalCount / limit);
-        return res.status(200).json({
-          totalPages,
-          currentPage: page,
-          data: leaderBoardResult,
-        });
-      }
-    );
+    console.log("Leaderboard result:", leaderBoardResult);
+    const totalPages = Math.ceil(leaderBoardResult.length / limit);
+    return res.status(200).json({
+      totalPages,
+      currentPage: page,
+      data: leaderBoardResult,
+    });
   });
 });
 
