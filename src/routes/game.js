@@ -225,6 +225,7 @@ router.post("/update_card_balance", (req, res) => {
                 }
                 return res.status(200).json({
                     ...result,
+                    insertedGames: gameResult.affectedRows
                 });
             }
         );
