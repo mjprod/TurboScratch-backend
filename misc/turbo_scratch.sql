@@ -1,4 +1,5 @@
 SELECT * FROM Users;
+select * from GameBetaBlock;
 SELECT * FROM Leaderboard;
 
 
@@ -94,6 +95,7 @@ SELECT
   END AS trend
 FROM Leaderboard l
 JOIN computed_ranks cr ON l.user_id = cr.user_id
+WHERE l.week_start_date = (SELECT MAX(week_start_date) FROM Leaderboard)
 ORDER BY cr.computed_rank
 LIMIT 10 OFFSET 0;
 
