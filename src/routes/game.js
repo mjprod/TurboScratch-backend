@@ -192,9 +192,10 @@ router.post("/update_lucky_symbol", (req, res) => {
 });
 
 router.post("/update_card_balance", (req, res) => {
-    const { user_id, increase_card_balance } = req.body;
+    const { user_id, beta_block_id,  increase_card_balance } = req.body;
     if (
         !user_id ||
+        !beta_block_id ||
         increase_card_balance === undefined ||
         increase_card_balance === null
     ) {
