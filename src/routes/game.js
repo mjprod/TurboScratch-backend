@@ -10,34 +10,35 @@ router.post("/", (req, res) => {
         lucky_symbol_won,
         number_combination_total,
         number_combination_user_played,
+
     } = req.body;
     if (!beta_block_id || !user_id) {
         return res
             .status(400)
             .json({ error: "beta_block_id and user_id are required" });
     }
-    const query = `INSERT INTO Game (beta_block_id, user_id, lucky_symbol_won, number_combination_total, number_combination_user_played)
+    const query = `INSERT INTO Games (beta_block_id, user_id, lucky_symbol_won, number_combination_total, number_combination_user_played)
                    VALUES (?, ?, ?, ?, ?)`;
-    pool.query(
-        query,
-        [
-            beta_block_id,
-            user_id,
-            lucky_symbol_won,
-            number_combination_total,
-            number_combination_user_played,
-        ],
-        (err, results) => {
-            if (err) {
-                console.error("Database error:", err);
-                return res.status(500).json({ error: err.message });
-            }
-            res.status(200).json({
-                message: "Game record created successfully!",
-                gameId: results.insertId,
-            });
-        }
-    );
+    /* pool.query(
+         query,
+         [
+             beta_block_id,
+             user_id,
+             lucky_symbol_won,
+             number_combination_total,
+             number_combination_user_played,
+         ],
+         (err, results) => {
+             if (err) {
+                 console.error("Database error:", err);
+                 return res.status(500).json({ error: err.message });
+             }
+             res.status(200).json({
+                 message: "Games record created successfully!",
+                 gameId: results.insertId,
+             });
+         }
+     );*/
 });
 
 router.post("/update_card_played", (req, res) => {
@@ -59,16 +60,16 @@ router.post("/update_card_played", (req, res) => {
     }
     const betaBlockQuery = `
       SELECT *
-      FROM BetaBlock
+      FROM BetaBlocks
       WHERE beta_block_id = ?;
     `;
     pool.query(betaBlockQuery, [beta_block_id], (err, betaBlockResult) => {
         if (err) {
-            console.error("Error Getting BetaBlock data:", err);
+            console.error("Error Getting BetaBlocks data:", err);
             return res.status(500).json({ error: err.message });
         }
         const createGameQuery = `
-        INSERT INTO Game (beta_block_id, user_id, lucky_symbol_won, number_combination_total, number_combination_user_played)
+        INSERT INTO Games (beta_block_id, user_id, lucky_symbol_won, number_combination_total, number_combination_user_played)
         VALUES (?, ?, ?, ?, 0)
       `;
         pool.query(
@@ -76,7 +77,7 @@ router.post("/update_card_played", (req, res) => {
             [beta_block_id, user_id, lucky_symbol_won, number_combination_total],
             (err, createGameResult) => {
                 if (err) {
-                    console.error("Error Creating Game:", err);
+                    console.error("Error Creating Games:", err);
                     return res.status(500).json({ error: err.message });
                 }
                 const dailyBlockQuery = `
@@ -177,7 +178,7 @@ router.post("/update_score", (req, res) => {
       WHERE user_id = ?;
     `;
     const updateComboPlayedQuery = `
-      UPDATE Game 
+      UPDATE Games 
       SET number_combination_user_played = ?
       WHERE game_id = ?
     `;

@@ -46,9 +46,9 @@ app.post("/users", (req, res) => {
   const nowUTC = new Date().toISOString().slice(0, 19).replace("T", " ");
   console.log("nowUTC:", nowUTC);
 
-  // 1. Check if there is an active campaign (BetaBlock) based on the current UTC date/time
+  // 1. Check if there is an active campaign (BetaBlocks) based on the current UTC date/time
   const campaignQuery = `
-    SELECT * FROM BetaBlock 
+    SELECT * FROM BetaBlocks 
     WHERE ? BETWEEN date_time_initial AND date_time_final
     ORDER BY beta_block_id DESC
     LIMIT 1
@@ -354,7 +354,6 @@ app.post("/daily_answer", (req, res) => {
   );
 });
 
-// Endpoint para criar um registro na tabela BetaBlock
 app.post("/betaBlock", (req, res) => {
   const { beta_block_description, date_time_initial, date_time_final } =
     req.body;
@@ -365,7 +364,7 @@ app.post("/betaBlock", (req, res) => {
     });
   }
   const query =
-    "INSERT INTO BetaBlock (beta_block_description, date_time_initial, date_time_final) VALUES (?, ?, ?)";
+    "INSERT INTO BetaBlocks (beta_block_description, date_time_initial, date_time_final) VALUES (?, ?, ?)";
   pool.query(
     query,
     [beta_block_description, date_time_initial, date_time_final],
@@ -375,7 +374,7 @@ app.post("/betaBlock", (req, res) => {
         return res.status(500).json({ error: err.message });
       }
       res.status(200).json({
-        message: "BetaBlock record created successfully!",
+        message: "BetaBlocks record created successfully!",
         betaBlockId: results.insertId,
       });
     }
@@ -460,12 +459,12 @@ app.post("/update_card_played", (req, res) => {
   }
   const betaBlockQuery = `
     SELECT *
-    FROM BetaBlock
+    FROM BetaBlocks
     WHERE beta_block_id = ?;
   `;
   pool.query(betaBlockQuery, [beta_block_id], (err, betaBlockResult) => {
     if (err) {
-      console.error("Error Getting BetaBlock data:", err);
+      console.error("Error Getting BetaBlocks data:", err);
       return res.status(500).json({ error: err.message });
     }
     const createGameQuery = `

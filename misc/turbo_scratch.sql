@@ -42,7 +42,7 @@ SELECT user_id,
        END AS trend
 FROM Leaderboard;
 
-select * from BetaBlock;
+select * from BetaBlocks;
 
 select 1;
 
@@ -68,7 +68,7 @@ CREATE TABLE turbo_scratch.Winners (
     beta_block_id INT,
     week_number INT,
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES Users(user_id),
-    CONSTRAINT fk_beta_block FOREIGN KEY (beta_block_id) REFERENCES BetaBlock(beta_block_id)
+    CONSTRAINT fk_beta_block FOREIGN KEY (beta_block_id) REFERENCES BetaBlocks(beta_block_id)
 );
 
 WITH computed_ranks AS (

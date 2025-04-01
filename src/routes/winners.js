@@ -7,9 +7,9 @@ router.get("/", (req, res) => {
     const nowUTC = new Date().toISOString().slice(0, 19).replace("T", " ");
     console.log("nowUTC:", nowUTC);
 
-    // 1. Check if there is an active campaign (BetaBlock) based on the current UTC date/time
+    // 1. Check if there is an active campaign (BetaBlocks) based on the current UTC date/time
     const campaignQuery = `
-      SELECT * FROM BetaBlock 
+      SELECT * FROM BetaBlocks 
       WHERE ? BETWEEN date_time_initial AND date_time_final
       ORDER BY beta_block_id DESC
       LIMIT 1

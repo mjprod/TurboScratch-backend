@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../configs/db");
 const router = express.Router();
+const { createGamesForDaily } = require("../controller/gameController");
 
 router.post("/question", (req, res) => {
     const { user_id } = req.body;
@@ -47,78 +48,81 @@ router.post("/question", (req, res) => {
     });
 });
 
-router.post("/answer", (req, res) => {
-    const { question_id, answer, user_id, cards_won } = req.body;
 
-    // Validate that all required parameters are provided
-    if (!question_id || !answer || !user_id || !cards_won) {
+router.post("/answer", (req, res) => {
+    const { question_id, answer, user_id, cards_won, beta_block_id } = req.body;
+
+    if (!question_id || !answer || !user_id || !cards_won || !beta_block_id) {
         return res
             .status(400)
-            .json({ error: "question_id, answer, and user_id are required" });
+            .json({ error: "question_id, answer, cards_won, beta_block_id and user_id are required" });
     }
 
-    // 1. Insert the answer into the Answers table
+    // 1. Inserir a resposta na tabela Answers
     const insertAnswerQuery = `
-      INSERT INTO Answers (answer, question_id, user_id)
-      VALUES (?, ?, ?)
+    INSERT INTO Answers (answer, question_id, user_id)
+    VALUES (?, ?, ?)
+  `;
+    pool.query(insertAnswerQuery, [answer, question_id, user_id], (err, answerResult) => {
+        if (err) {
+            console.error("Error inserting answer:", err);
+            return res.status(500).json({ error: err.message });
+        }
+
+        // 2. Inserir o registro diário na tabela Daily
+        const cards_played = 0;
+        const insertDailyQuery = `
+      INSERT INTO Daily (user_id, cards_won, cards_played, question_id)
+      VALUES (?, ?, ?, ?)
     `;
-    pool.query(
-        insertAnswerQuery,
-        [answer, question_id, user_id],
-        (err, answerResult) => {
+        pool.query(insertDailyQuery, [user_id, cards_won, cards_played, question_id], (err, dailyResult) => {
             if (err) {
-                console.error("Error inserting answer:", err);
+                console.error("Error inserting daily record:", err);
                 return res.status(500).json({ error: err.message });
             }
+            const dailyId = dailyResult.insertId;
+            const selectDailyQuery = "SELECT * FROM Daily WHERE daily_id = ?";
+            pool.query(selectDailyQuery, [dailyId], (err, dailyRecords) => {
+                if (err) {
+                    console.error("Error fetching daily record:", err);
+                    return res.status(500).json({ error: err.message });
+                }
+                if (dailyRecords.length === 0) {
+                    return res.status(404).json({ error: "Daily record not found" });
+                }
+                const dailyRecord = dailyRecords[0];
 
-            // 2. Insert the daily record into the Daily table with fixed values
-            const cards_played = 0;
-            const insertDailyQuery = `
-        INSERT INTO Daily (user_id, cards_won, cards_played, question_id)
-        VALUES (?, ?, ?, ?)
-      `;
-            pool.query(
-                insertDailyQuery,
-                [user_id, cards_won, cards_played, question_id],
-                (err, dailyResult) => {
+                // 3. Criar os jogos (cards) utilizando o gameController
+                // A função createGamesForDaily deve aceitar o dailyRecord e retornar, via callback, o resultado da inserção dos jogos.
+                createGamesForDaily(dailyRecord, beta_block_id, (err, gameResult) => {
                     if (err) {
-                        console.error("Error inserting daily record:", err);
+                        console.error("Error inserting games:", err);
                         return res.status(500).json({ error: err.message });
                     }
-
-                    // 3. Retrieve the inserted Daily record
-                    const dailyId = dailyResult.insertId;
-                    const selectDailyQuery = "SELECT * FROM Daily WHERE daily_id = ?";
-                    pool.query(selectDailyQuery, [dailyId], (err, dailyRecords) => {
-                        if (err) {
-                            console.error("Error fetching daily record:", err);
-                            return res.status(500).json({ error: err.message });
-                        }
-                        if (dailyRecords.length === 0) {
-                            return res.status(404).json({ error: "Daily record not found" });
-                        }
-                        const updateUserQuery = `
+                    // 4. Atualizar o saldo de cartas do usuário
+                    const updateUserQuery = `
             UPDATE Users
             SET card_balance = card_balance + ?
             WHERE user_id = ?;
           `;
-                        pool.query(updateUserQuery, [cards_won, user_id], (err, result) => {
-                            if (err) {
-                                console.error("Error updating user balance:", err);
-                                return res.status(500).json({ error: err.message });
-                            }
-                            console.log("User balance updated successfully");
-                            return res.status(200).json({
-                                message: "Answer and daily record inserted successfully!",
-                                answer_id: answerResult.insertId,
-                                daily: dailyRecords[0],
-                            });
+                    pool.query(updateUserQuery, [cards_won, user_id], (err, updateResult) => {
+                        if (err) {
+                            console.error("Error updating user balance:", err);
+                            return res.status(500).json({ error: err.message });
+                        }
+                        console.log("User balance updated successfully");
+                        return res.status(200).json({
+                            message: "Answer, daily record, and games inserted successfully!",
+                            answer_id: answerResult.insertId,
+                            daily: dailyRecord,
+                            insertedGames: gameResult.affectedRows
                         });
                     });
-                }
-            );
-        }
-    );
+                });
+            });
+        });
+    });
 });
+
 
 module.exports = router;
