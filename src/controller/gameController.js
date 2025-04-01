@@ -107,8 +107,8 @@ function getLuckySymbol(index, diff) {
 // Function to create games (cards) for a Daily record
 // dailyRecord should contain at least: daily_id, user_id, cards_won, etc.
 // beta_block_id is passed separately to ensure it's a valid value.
-function createGamesForDaily(dailyRecord, beta_block_id, callback) {
-  const cardsWon = dailyRecord.cards_won;
+function createGamesForDaily(user_id, cards_won, beta_block_id, callback) {
+  const cardsWon = cards_won;
 
   getConfigDistribution((err, configDistribution) => {
     if (err) return callback(err);
@@ -124,7 +124,7 @@ function createGamesForDaily(dailyRecord, beta_block_id, callback) {
     const themeAssignments = getThemeAssignments(cardsWon);
 
     // Before setting the lucky_symbol values for the new games, get the current situation:
-    getCurrentLuckyInfo(dailyRecord.user_id, beta_block_id, (err, info) => {
+    getCurrentLuckyInfo(user_id, beta_block_id, (err, info) => {
       if (err) return callback(err);
       const currentGameCount = info.game_count || 0;
       const currentLucky = info.current_lucky_count || 0;
@@ -149,7 +149,7 @@ function createGamesForDaily(dailyRecord, beta_block_id, callback) {
         const theme = themeAssignments[i];
 
         newGames.push([
-          dailyRecord.user_id, // user_id
+          user_id, // user_id
           beta_block_id,       // beta_block_id (valid value)
           lucky,               // lucky_symbol_won
           numCombos,           // number_combination_total (0 to 4)
