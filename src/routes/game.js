@@ -23,112 +23,103 @@ router.post("/", (req, res) => {
 });
 
 router.post("/update_card_played", (req, res) => {
-  const { beta_block_id, game_id } = req.body;
+  const { beta_block_id, game_id, user_id} = req.body;
 
-  if (!game_id || !beta_block_id) {
+  if (!user_id ||!game_id || !beta_block_id) {
     return res.status(400).json({
       error: "game_id and beta_block_id are required required",
     });
   }
-  const gameQuery = "SELECT * FROM Games WHERE game_id=?";
-  pool.query(gameQuery, [game_id], (err, gameResult) => {
+
+  const updateCardPlayedQuery = `UPDATE Games SET played = 1 WHERE game_id = ?`;
+  pool.query(updateCardPlayedQuery, [game_id], (err, updateResult) => {
     if (err) {
       console.error("Database error:", err);
       return res.status(500).json({ error: err.message });
     }
-    if (gameResult.length === 0) {
-      return res.status(404).json({ error: "Game not found" });
-    }
-    const updateCardPlayedQuery = `UPDATE Games SET played = 1 WHERE game_id = ?`;
-    pool.query(updateCardPlayedQuery, [game_id], (err, updateResult) => {
-      if (err) {
-        console.error("Database error:", err);
-        return res.status(500).json({ error: err.message });
-      }
-      const betaBlockQuery = `
+    const betaBlockQuery = `
       SELECT *
       FROM BetaBlocks
       WHERE beta_block_id = ?;
     `;
-      pool.query(betaBlockQuery, [beta_block_id], (err, betaBlockResult) => {
-        if (err) {
-          console.error("Error Getting BetaBlocks data:", err);
-          return res.status(500).json({ error: err.message });
-        }
-        const dailyBlockQuery = `
+    pool.query(betaBlockQuery, [beta_block_id], (err, betaBlockResult) => {
+      if (err) {
+        console.error("Error Getting BetaBlocks data:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      const dailyBlockQuery = `
             SELECT *
             FROM Daily
             WHERE user_id = ?
             AND create_at BETWEEN ? AND ? 
             ORDER BY create_at ASC;
           `;
-        if (betaBlockQuery.length === 0) {
-          return res.status(404).json({ error: "Beta Block not found" });
-        }
-        pool.query(
-          dailyBlockQuery,
-          [
-            user_id,
-            betaBlockResult[0].date_time_initial,
-            betaBlockResult[0].date_time_final,
-          ],
-          (err, dailyBlockResult) => {
-            if (err) {
-              console.error("Error Getting Daily data:", err);
-              return res.status(500).json({ error: err.message });
-            }
-            if (dailyBlockResult.length === 0) {
-              return res.status(404).json({ error: "Daily Data not found" });
-            }
+      if (betaBlockQuery.length === 0) {
+        return res.status(404).json({ error: "Beta Block not found" });
+      }
+      pool.query(
+        dailyBlockQuery,
+        [
+          user_id,
+          betaBlockResult[0].date_time_initial,
+          betaBlockResult[0].date_time_final,
+        ],
+        (err, dailyBlockResult) => {
+          if (err) {
+            console.error("Error Getting Daily data:", err);
+            return res.status(500).json({ error: err.message });
+          }
+          if (dailyBlockResult.length === 0) {
+            return res.status(404).json({ error: "Daily Data not found" });
+          }
 
-            const dailyToDeduct = dailyBlockResult.find(
-              (dailyBlockResult) =>
-                dailyBlockResult.cards_played < dailyBlockResult.cards_won
-            );
-            const updateUserScoreQuery = `
+          const dailyToDeduct = dailyBlockResult.find(
+            (dailyBlockResult) =>
+              dailyBlockResult.cards_played < dailyBlockResult.cards_won
+          );
+          const updateUserScoreQuery = `
                 UPDATE Users
                 SET card_balance = card_balance - 1
                 WHERE user_id = ?;
               `;
-            if (!dailyToDeduct) {
-              pool.query(updateUserScoreQuery, [user_id], (err, result) => {
-                if (err) {
-                  console.error("Error Updating User data:", err);
-                  return res.status(500).json({ error: err.message });
-                }
-                return res.status(200).json({
-                  message: "Successfully Decreased the Card Balance",
-                });
+          if (!dailyToDeduct) {
+            pool.query(updateUserScoreQuery, [user_id], (err, result) => {
+              if (err) {
+                console.error("Error Updating User data:", err);
+                return res.status(500).json({ error: err.message });
+              }
+              return res.status(200).json({
+                message: "Successfully Updated Card Balance Played",
               });
-            } else {
-              const updateCardsPlayedQuery = `
+            });
+          } else {
+            const updateCardsPlayedQuery = `
                   UPDATE Daily
                   SET cards_played = cards_played + 1
                   WHERE user_id = ? AND daily_id = ?;
                 `;
-              pool.query(
-                updateCardsPlayedQuery,
-                [user_id, dailyToDeduct.daily_id],
-                (err, result) => {
+            pool.query(
+              updateCardsPlayedQuery,
+              [user_id, dailyToDeduct.daily_id],
+              (err, result) => {
+                if (err) {
+                  console.error("Error Updating Daily data:", err);
+                  return res.status(500).json({ error: err.message });
+                }
+                pool.query(updateUserScoreQuery, [user_id], (err, result) => {
                   if (err) {
-                    console.error("Error Updating Daily data:", err);
+                    console.error("Error Updating User data:", err);
                     return res.status(500).json({ error: err.message });
                   }
-                  pool.query(updateUserScoreQuery, [user_id], (err, result) => {
-                    if (err) {
-                      console.error("Error Updating User data:", err);
-                      return res.status(500).json({ error: err.message });
-                    }
-                    return res.status(200).json({
-                      message: "Successfully Decreased the Card Balance",
-                    });
+                  return res.status(200).json({
+                    message: "Successfully Updated Card Balance Played",
                   });
-                }
-              );
-            }
+                });
+              }
+            );
           }
-        );
-      });
+        }
+      );
     });
   });
 });
