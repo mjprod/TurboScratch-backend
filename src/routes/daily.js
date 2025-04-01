@@ -58,12 +58,26 @@ router.post("/answer", (req, res) => {
             .json({ error: "question_id, answer, cards_won, beta_block_id and user_id are required" });
     }
 
+    // Check if an answer already exists for this beta_block, question and user
+    const checkAnswerQuery = `
+    SELECT * FROM Answers
+    WHERE question_id = ? AND user_id = ? AND beta_block_id = ?
+    `;
+    pool.query(checkAnswerQuery, [question_id, user_id, beta_block_id], (err, existingRows) => {
+        if (err) {
+            console.error("Error checking existing answer:", err);
+            return res.status(500).json({ error: err.message });
+        }
+        if (existingRows.length > 0) {
+            return res.status(400).json({ error: "An answer for this beta_block already exists." });
+        }
+    });
     // 1. Inserir a resposta na tabela Answers
     const insertAnswerQuery = `
-    INSERT INTO Answers (answer, question_id, user_id)
-    VALUES (?, ?, ?)
+    INSERT INTO Answers (answer, question_id, user_id, beta_block_id)
+    VALUES (?, ?, ? , ?)
   `;
-    pool.query(insertAnswerQuery, [answer, question_id, user_id], (err, answerResult) => {
+    pool.query(insertAnswerQuery, [answer, question_id, user_id, beta_block_id], (err, answerResult) => {
         if (err) {
             console.error("Error inserting answer:", err);
             return res.status(500).json({ error: err.message });
