@@ -98,11 +98,14 @@ function getCurrentLuckyInfo(user_id, beta_block_id, callback) {
   });
 }
 
-// Function to decide if the game should receive a lucky symbol based on the index and required difference
-// For the first 'diff' games it returns 1, otherwise 0.
-function getLuckySymbol(index, diff) {
-  return index < diff ? 1 : 0;
+function getRandomInt(min, max) {
+  // Ensure the min and max are integers.
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  // Generate a random number between min (inclusive) and max (inclusive)
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
 
 // Function to create games (cards) for a Daily record
 // dailyRecord should contain at least: daily_id, user_id, cards_won, etc.
@@ -129,25 +132,22 @@ function createGamesForDaily(user_id, cards_won, beta_block_id, callback) {
       const currentGameCount = info.game_count || 0;
       const currentLucky = info.current_lucky_count || 0;
       // Calculate desired lucky as (total number of games % 50)
-      const LS = 50;
-      const desiredLucky = currentGameCount % LS;
+      const LS = configDistribution.ls;
+      const desiredLucky = parseInt(currentGameCount / LS, 10);
       // The difference needed in the new games
-      const diff = desiredLucky > currentLucky ? desiredLucky - currentLucky : 0;
-
-      console.log("Current game count:", currentGameCount);
-      console.log("Desired Lucky Symbol count (game_count % 50):", desiredLucky);
-      console.log("Current Lucky Symbol count:", currentLucky);
-      console.log("Additional Lucky symbols needed in new games:", diff);
+      const diff = desiredLucky > currentLucky ? 1 : 0;
 
       // Prepare data for insertion into the Games table
       let newGames = [];
+      let luckySymbolIndex = getRandomInt(0, cardsWon - 1)
+
       // For the new games, use getLuckySymbol: for the first 'diff' games of the new batch, return 1, then 0.
       for (let i = 0; i < cardsWon; i++) {
         const rule = assignmentArray[i];
         const numCombos = parseInt(rule.substring(1)); // e.g., "x3" → 3
-        const lucky = getLuckySymbol(i, diff); // determine 1 or 0 for this game
+        const lucky = luckySymbolIndex === i ? diff : 0; // determine 1 or 0 for this game
         const theme = themeAssignments[i];
-
+        
         newGames.push([
           user_id, // user_id
           beta_block_id,       // beta_block_id (valid value)
