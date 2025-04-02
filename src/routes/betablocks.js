@@ -103,6 +103,7 @@ router.get("/:id/stats", (req, res) => {
        WITH dist AS (
         SELECT
             beta_block_id,
+            COUNT(DISTINCT user_id) AS total_players,
             COUNT(*) AS total_games,
             SUM(CASE WHEN lucky_symbol_won = 1 THEN 1 ELSE 0 END) AS lucky_count,
             SUM(CASE WHEN number_combination_total = 4 THEN 1 ELSE 0 END) AS x4_count,
@@ -120,7 +121,7 @@ router.get("/:id/stats", (req, res) => {
             beta_block_id,
             total_games,
             'lucky_symbol' AS rule,
-            ROUND(100.0 * lucky_count / total_games, 2) AS measured_pct
+            ROUND(100.0 * lucky_count / total_games, 2) / total_players AS measured_pct
         FROM dist
         
         UNION ALL
