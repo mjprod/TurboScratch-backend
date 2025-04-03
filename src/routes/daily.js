@@ -25,7 +25,7 @@ router.post("/question", (req, res) => {
 
         // 2. Retrieve the question text from the Questions table using newQuestionId.
         const questionQuery =
-            "SELECT question FROM turbo_scratch.Questions WHERE question_id = ?";
+            "SELECT question FROM Questions WHERE actived=1 AND question_id = ?";
         pool.query(questionQuery, [newQuestionId], (err, questionResults) => {
             if (err) {
                 console.error("Error fetching question:", err);
