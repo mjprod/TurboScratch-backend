@@ -60,7 +60,7 @@ router.post("/answer", (req, res) => {
     // Check if an answer already exists for this beta_block, question and user
     const checkAnswerQuery = `
       SELECT * FROM Answers
-      WHERE question_id = ? AND user_id = ? AND beta_block_id = ?
+      WHERE question_id = ? AND user_id = ?
     `;
     pool.query(checkAnswerQuery, [question_id, user_id, beta_block_id], (err, existingRows) => {
         if (err) {
@@ -73,9 +73,9 @@ router.post("/answer", (req, res) => {
 
         // 1. Insert the answer into the Answers table
         const insertAnswerQuery = `
-        INSERT INTO Answers (answer, question_id, user_id, beta_block_id)
-        VALUES (?, ?, ? , ?)
-      `;
+            INSERT INTO Answers (answer, question_id, user_id)
+            VALUES (?, ?, ?)
+        `;
         pool.query(insertAnswerQuery, [answer, question_id, user_id, beta_block_id], (err, answerResult) => {
             if (err) {
                 console.error("Error inserting answer:", err);
@@ -85,9 +85,9 @@ router.post("/answer", (req, res) => {
             // 2. Insert the daily record into the Daily table
             const cards_played = 0;
             const insertDailyQuery = `
-          INSERT INTO Daily (user_id, cards_won, cards_played, question_id)
-          VALUES (?, ?, ?, ?)
-        `;
+                INSERT INTO Daily (user_id, cards_won, cards_played, question_id)
+                VALUES (?, ?, ?, ?)
+            `;
             pool.query(insertDailyQuery, [user_id, cards_won, cards_played, question_id], (err, dailyResult) => {
                 if (err) {
                     console.error("Error inserting daily record:", err);
