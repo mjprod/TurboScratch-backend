@@ -28,6 +28,7 @@ router.use('/betablocks', require('./routes/betablocks'));
 router.use('/winners', apiKeyMiddleware, require('./routes/winners'));
 router.use('/login', require('./routes/login'));
 router.use('/config', require('./routes/config'));
+router.use('/questions', require('./routes/questions'));
 
 app.use(api_prefix, router);
 

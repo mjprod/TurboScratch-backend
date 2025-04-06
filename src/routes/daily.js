@@ -4,12 +4,11 @@ const router = express.Router();
 const { createGamesForDaily } = require("../controller/gameController");
 
 router.post("/question", (req, res) => {
-    const { user_id } = req.body;
+    const { user_id, beta_block_id } = req.body;
     if (!user_id) {
-        return res.status(400).json({ error: "user_id is required" });
+        return res.status(400).json({ error: "user_id and beta_block_id are required" });
     }
-    // 1. Determine the new question_id for the given user from the Answers table.
-    // This query gets the maximum question_id currently stored for that user.
+
     const selectMaxQuery =
         "SELECT MAX(question_id) AS maxQuestion FROM Answers WHERE user_id = ?";
     pool.query(selectMaxQuery, [user_id], (err, results) => {
@@ -25,8 +24,8 @@ router.post("/question", (req, res) => {
 
         // 2. Retrieve the question text from the Questions table using newQuestionId.
         const questionQuery =
-            "SELECT question FROM Questions WHERE actived=1 AND question_id = ?";
-        pool.query(questionQuery, [newQuestionId], (err, questionResults) => {
+            "SELECT question FROM Questions WHERE actived=1 AND question_id = ? AND beta_block_id = ?";
+        pool.query(questionQuery, [newQuestionId, beta_block_id], (err, questionResults) => {
             if (err) {
                 console.error("Error fetching question:", err);
                 return res.status(500).json({ error: err.message });
@@ -49,12 +48,14 @@ router.post("/question", (req, res) => {
 });
 
 router.post("/answer", (req, res) => {
-    const { question_id, answer, user_id, cards_won, beta_block_id } = req.body;
+    const { question_id, answer, user_id, cards_won } = req.body;
 
-    if (!question_id || !answer || !user_id || !cards_won || !beta_block_id) {
+    if (!question_id || !answer || !user_id || !cards_won) {
         return res
             .status(400)
-            .json({ error: "question_id, answer, cards_won, beta_block_id and user_id are required" });
+            .json({
+                error: "question_id, answer, cards_won, and user_id are required",
+            });
     }
 
     // Check if an answer already exists for this beta_block, question and user
