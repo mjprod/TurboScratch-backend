@@ -5,12 +5,12 @@ const { createGamesForDaily } = require("../controller/gameController");
 
 router.post("/question", (req, res) => {
     const { user_id, beta_block_id } = req.body;
-    if (!user_id) {
+    if (!user_id || !beta_block_id) {
         return res.status(400).json({ error: "user_id and beta_block_id are required" });
     }
 
-    const selectMaxQuery =
-        "SELECT MAX(question_id) AS maxQuestion FROM Answers WHERE user_id = ?";
+    const selectMaxQuery = "SELECT MAX(question_id) AS maxQuestion FROM Answers WHERE user_id = ?";
+
     pool.query(selectMaxQuery, [user_id], (err, results) => {
         if (err) {
             console.error("Error selecting max question_id:", err);
@@ -22,8 +22,7 @@ router.post("/question", (req, res) => {
             newQuestionId = results[0].maxQuestion + 1;
         }
 
-        const questionQuery =
-            "SELECT question, question_id FROM Questions WHERE beta_block_id = ? AND actived=1 AND question_id >= ? ORDER BY question_id ASC LIMIT 1";
+        const questionQuery = "SELECT question, question_id FROM Questions WHERE beta_block_id = ? AND actived=1 AND question_id >= ? ORDER BY question_id ASC LIMIT 1";
         pool.query(questionQuery, [beta_block_id, newQuestionId], (err, questionResults) => {
             if (err) {
                 console.error("Error fetching question:", err);
