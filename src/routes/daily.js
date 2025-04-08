@@ -22,10 +22,9 @@ router.post("/question", (req, res) => {
             newQuestionId = results[0].maxQuestion + 1;
         }
 
-        // 2. Retrieve the question text from the Questions table using newQuestionId.
         const questionQuery =
-            "SELECT question FROM Questions WHERE actived=1 AND question_id = ? AND beta_block_id = ?";
-        pool.query(questionQuery, [newQuestionId, beta_block_id], (err, questionResults) => {
+            "SELECT question, question_id FROM Questions WHERE beta_block_id = ? AND actived=1 AND question_id >= ? ORDER BY question_id ASC LIMIT 1";
+        pool.query(questionQuery, [beta_block_id, newQuestionId], (err, questionResults) => {
             if (err) {
                 console.error("Error fetching question:", err);
                 return res.status(500).json({ error: err.message });
@@ -34,14 +33,9 @@ router.post("/question", (req, res) => {
                 return res.status(404).json({ error: "Question not found" });
             }
 
-            const questionText = questionResults[0].question;
-
-            // 3. Return the question details to the client.
-            // The client will display the question, and once the user answers,
-            // a separate endpoint will handle the answer insertion.
             return res.status(200).json({
-                question_id: newQuestionId,
-                question: questionText,
+                question_id: questionResults[0].question_id,
+                question: questionResults[0].question,
             });
         });
     });
@@ -58,7 +52,6 @@ router.post("/answer", (req, res) => {
             });
     }
 
-    // Check if an answer already exists for this beta_block, question and user
     const checkAnswerQuery = `
       SELECT * FROM Answers
       WHERE question_id = ? AND user_id = ?
@@ -72,7 +65,6 @@ router.post("/answer", (req, res) => {
             return res.status(400).json({ error: "An answer for this beta_block already exists." });
         }
 
-        // 1. Insert the answer into the Answers table
         const insertAnswerQuery = `
             INSERT INTO Answers (answer, question_id, user_id)
             VALUES (?, ?, ?)
@@ -83,7 +75,6 @@ router.post("/answer", (req, res) => {
                 return res.status(500).json({ error: err.message });
             }
 
-            // 2. Insert the daily record into the Daily table
             const cards_played = 0;
             const insertDailyQuery = `
                 INSERT INTO Daily (user_id, cards_won, cards_played, question_id)
@@ -106,15 +97,11 @@ router.post("/answer", (req, res) => {
                     }
                     const dailyRecord = dailyRecords[0];
 
-                    // 3. Create the games (cards) using the gameController
-                    // The function createGamesForDaily should accept the dailyRecord and return, via callback,
-                    // the result of the games insertion.
                     createGamesForDaily(dailyRecord.user_id, dailyRecord.cards_won, beta_block_id, (err, gameResult) => {
                         if (err) {
                             console.error("Error inserting games:", err);
                             return res.status(500).json({ error: err.message });
                         }
-                        // 4. Update the user's card balance
                         const updateUserQuery = `
                             UPDATE Users
                             SET card_balance = card_balance + ?
