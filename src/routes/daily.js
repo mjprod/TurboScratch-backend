@@ -55,7 +55,7 @@ router.post("/answer", (req, res) => {
       SELECT * FROM Answers
       WHERE question_id = ? AND user_id = ?
     `;
-    pool.query(checkAnswerQuery, [question_id, user_id, beta_block_id], (err, existingRows) => {
+    pool.query(checkAnswerQuery, [question_id, user_id], (err, existingRows) => {
         if (err) {
             console.error("Error checking existing answer:", err);
             return res.status(500).json({ error: err.message });
@@ -68,7 +68,7 @@ router.post("/answer", (req, res) => {
             INSERT INTO Answers (answer, question_id, user_id)
             VALUES (?, ?, ?)
         `;
-        pool.query(insertAnswerQuery, [answer, question_id, user_id, beta_block_id], (err, answerResult) => {
+        pool.query(insertAnswerQuery, [answer, question_id, user_id], (err, answerResult) => {
             if (err) {
                 console.error("Error inserting answer:", err);
                 return res.status(500).json({ error: err.message });
@@ -96,7 +96,7 @@ router.post("/answer", (req, res) => {
                     }
                     const dailyRecord = dailyRecords[0];
 
-                    createGamesForDaily(dailyRecord.user_id, dailyRecord.cards_won, beta_block_id, (err, gameResult) => {
+                    createGamesForDaily(dailyRecord.user_id, dailyRecord.cards_won, (err, gameResult) => {
                         if (err) {
                             console.error("Error inserting games:", err);
                             return res.status(500).json({ error: err.message });
