@@ -8,7 +8,11 @@ const { api_prefix } = require("./utils/constants");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: 'https://feature-staging.d1izslsso66vbm.amplifyapp.com',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(bodyParser.json());
 
 app.use(cryptoMiddleware)
