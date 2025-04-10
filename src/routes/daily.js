@@ -41,9 +41,9 @@ router.post("/question", (req, res) => {
 });
 
 router.post("/answer", (req, res) => {
-    const { question_id, answer, user_id, cards_won } = req.body;
-
-    if (!question_id || !answer || !user_id || !cards_won) {
+    const { question_id, answer, user_id, cards_won, beta_block_id } = req.body;
+    console.log(req.body);
+    if (!question_id || !answer || !user_id || !cards_won || !beta_block_id) {
         return res
             .status(400)
             .json({
@@ -87,6 +87,7 @@ router.post("/answer", (req, res) => {
                 const dailyId = dailyResult.insertId;
                 const selectDailyQuery = "SELECT * FROM Daily WHERE daily_id = ?";
                 pool.query(selectDailyQuery, [dailyId], (err, dailyRecords) => {
+                    console.log("Daily Records", dailyRecords)
                     if (err) {
                         console.error("Error fetching daily record:", err);
                         return res.status(500).json({ error: err.message });
@@ -96,7 +97,7 @@ router.post("/answer", (req, res) => {
                     }
                     const dailyRecord = dailyRecords[0];
 
-                    createGamesForDaily(dailyRecord.user_id, dailyRecord.cards_won, (err, gameResult) => {
+                    createGamesForDaily(dailyRecord.user_id, dailyRecord.cards_won, beta_block_id, (err, gameResult) => {
                         if (err) {
                             console.error("Error inserting games:", err);
                             return res.status(500).json({ error: err.message });
