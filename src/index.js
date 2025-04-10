@@ -13,9 +13,12 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+app.options("*", cors());
+
 app.use(bodyParser.json());
 
-app.use(cryptoMiddleware)
+app.use(cryptoMiddleware);
 
 const router = express.Router();
 
