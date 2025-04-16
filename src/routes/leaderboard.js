@@ -21,11 +21,11 @@ router.post("/", (req, res) => {
         l.week_start_date,
         cr.total_score,
         cr.computed_rank AS current_rank,
-        l.current_rank AS snapshot_rank,
+        l.previous_rank AS snapshot_rank,
             CASE
-                WHEN l.current_rank IS NULL THEN 'N/A'
-                WHEN cr.computed_rank < l.current_rank THEN 'up'
-                WHEN cr.computed_rank > l.current_rank THEN 'down'
+                WHEN l.previous_rank IS NULL THEN 'new'
+                WHEN cr.computed_rank < l.previous_rank THEN 'up'
+                WHEN cr.computed_rank > l.previous_rank THEN 'down'
                 ELSE 'same'
             END AS trend
         FROM Leaderboard l
