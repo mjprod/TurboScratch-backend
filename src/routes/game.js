@@ -213,7 +213,7 @@ router.post("/update_card_balance", (req, res) => {
         }
         const updateCardBalanceQuery = `
             UPDATE Users
-            SET card_balance = card_balance + ?
+            SET card_balance = (SELECT count(*) FROM Games WHERE user_id=22 and played=0)
             WHERE user_id = ?;
         `;
         pool.query(

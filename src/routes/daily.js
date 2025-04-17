@@ -104,7 +104,7 @@ router.post("/answer", (req, res) => {
                         }
                         const updateUserQuery = `
                             UPDATE Users
-                            SET card_balance = card_balance + ?
+                            SET card_balance = (SELECT count(*) FROM Games WHERE user_id=22 and played=0)
                             WHERE user_id = ?;
                         `;
                         pool.query(updateUserQuery, [cards_won, user_id], (err, updateResult) => {
