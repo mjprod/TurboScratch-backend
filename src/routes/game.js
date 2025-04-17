@@ -216,9 +216,10 @@ router.post("/update_card_balance", (req, res) => {
             SET card_balance = (SELECT count(*) FROM Games WHERE user_id=22 and played=0)
             WHERE user_id = ?;
         `;
+        console.log("CardBalance Update Query", updateCardBalanceQuery);
         pool.query(
             updateCardBalanceQuery,
-            [increase_card_balance, user_id],
+            [user_id],
             (err, result) => {
                 if (err) {
                     console.error("Error Updating User data:", err);
