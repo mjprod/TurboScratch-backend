@@ -11,7 +11,7 @@ router.post("/", (req, res) => {
             .status(400)
             .json({ error: "beta_block_id and user_id are required" });
     }
-    const query = `SELECT * FROM turbo_scratch.Games WHERE user_id = ? AND beta_block_id=? AND played=0;`;
+    const query = `SELECT * FROM turbo_scratch.Games WHERE user_id = ? AND beta_block_id=? AND played=0 LIMIT 12;`;
     pool.query(query, [user_id, beta_block_id], (err, results) => {
         if (err) {
             console.error("Database error:", err);
