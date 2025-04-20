@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../configs/db");
 const router = express.Router();
+const { getCurrentDate } = require("../utils/datetime")
 
 // Endpoint to fetch user details by user_id
 // To register a new user, include 'name' and 'email' as query parameters (e.g. /users/1?name=John&email=john@example.com)
@@ -12,8 +13,9 @@ router.post("/", (req, res) => {
             .json({ error: "beta_block_id and user_id are required" });
     }
     // Get current date/time in UTC in the format "YYYY-MM-DD HH:MM:SS"
-    const nowUTC = new Date().toISOString().slice(0, 19).replace("T", " ");
-    console.log("nowUTC:", nowUTC);
+
+    const nowSydney = getCurrentDate();
+    console.log("nowUTC:", nowSydney);
 
     // 1. Check if there is an active campaign (BetaBlocks) based on the current UTC date/time
     const campaignQuery = `
@@ -22,7 +24,7 @@ router.post("/", (req, res) => {
       ORDER BY beta_block_id DESC
       LIMIT 1
     `;
-    pool.query(campaignQuery, [nowUTC], (err, campaigns) => {
+    pool.query(campaignQuery, [nowSydney], (err, campaigns) => {
         if (err) {
             console.error("Error checking campaign:", err);
             return res.status(500).json({ error: err.message });

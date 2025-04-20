@@ -13,4 +13,13 @@ function formatDate(date) {
   return `${year}-${month}-${day}`;
 }
 
-module.exports = { getCurrentWeekStartDate };
+function getCurrentDate() {
+  const currentDate = new Date();
+  const formattedDate = `${currentDate.getFullYear()}-${String(
+    currentDate.getMonth() + 1
+  ).padStart(2, "0")}-${String(currentDate.getDate()).padStart(2, "0")}`;
+  return formattedDate;
+}
+
+
+module.exports = { getCurrentWeekStartDate, getCurrentDate, formatDate };
