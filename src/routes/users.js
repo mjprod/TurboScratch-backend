@@ -1,7 +1,6 @@
 const express = require("express");
 const pool = require("../configs/db");
 const router = express.Router();
-const { getCurrentDate, convertSydneyLocalDateToUTC } = require("../utils/datetime")
 
 // Endpoint to fetch user details by user_id
 // To register a new user, include 'name' and 'email' as query parameters (e.g. /users/1?name=John&email=john@example.com)
@@ -13,9 +12,8 @@ router.post("/", (req, res) => {
             .json({ error: "beta_block_id and user_id are required" });
     }
     // Get current date/time in UTC in the format "YYYY-MM-DD HH:MM:SS"
-
-    const nowSydney = getCurrentDate();
-    console.log("nowUTC:", nowSydney);
+    const nowUTC = new Date().toISOString().slice(0, 19).replace("T", " ");
+    console.log("nowUTC:", nowUTC);
 
     // 1. Check if there is an active campaign (BetaBlocks) based on the current UTC date/time
     const campaignQuery = `
@@ -24,7 +22,7 @@ router.post("/", (req, res) => {
       ORDER BY beta_block_id DESC
       LIMIT 1
     `;
-    pool.query(campaignQuery, [nowSydney], (err, campaigns) => {
+    pool.query(campaignQuery, [nowUTC], (err, campaigns) => {
         if (err) {
             console.error("Error checking campaign:", err);
             return res.status(500).json({ error: err.message });
@@ -56,8 +54,8 @@ router.post("/", (req, res) => {
                 const userName = name;
                 const userEmail = email;
                 const insertQuery = `
-                    INSERT INTO Users (user_id, name, email, total_score, lucky_symbol_balance, ticket_balance, card_balance, current_beta_block)
-                    VALUES (?, ?, ?, 0, 0, 0, 0, NULL)`;
+            INSERT INTO Users (user_id, name, email, total_score, lucky_symbol_balance, ticket_balance, card_balance, current_beta_block)
+            VALUES (?, ?, ?, 0, 0, 0, 0, NULL)`;
                 pool.query(
                     insertQuery,
                     [user_id, userName, userEmail],
@@ -141,21 +139,20 @@ router.post("/", (req, res) => {
 // and return the response with "current_week" and "days" as an array.
 function fetchDailyDataAndReturn(user, activeCampaign, res) {
     // Calculate the total number of weeks in the campaign
-    const campaignStart = new Date(convertSydneyLocalDateToUTC(activeCampaign.date_time_initial));
-    const campaignEnd = new Date(convertSydneyLocalDateToUTC(activeCampaign.date_time_final));
+    const campaignStart = new Date(activeCampaign.date_time_initial);
+    const campaignEnd = new Date(activeCampaign.date_time_final);
     const today = new Date();
 
     const diffDays = Math.ceil(
         (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24)
     );
-
     const totalWeeks = Math.ceil(diffDays / 7);
-    const truncateToDate = (dt) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
-    
+
     const daysSinceStart = Math.floor(
-        (truncateToDate(today) - truncateToDate(campaignStart)) / (1000 * 60 * 60 * 24)
+        (today - campaignStart) / (1000 * 60 * 60 * 24)
     );
     const currentWeek = Math.floor(daysSinceStart / 7) + 1;
+
     // Query to group daily records by week relative to the campaign start date.
     // The week is computed as: FLOOR(DATEDIFF(create_at, campaignStart) / 7) + 1.
     const dailyQuery = `
@@ -166,17 +163,17 @@ function fetchDailyDataAndReturn(user, activeCampaign, res) {
       FROM Daily
       WHERE user_id = ? 
         AND create_at BETWEEN ? AND ?
-      GROUP BY 1
-      ORDER BY 1 ASC
+      GROUP BY week
+      ORDER BY week ASC;
     `;
-    console.log(convertSydneyLocalDateToUTC(activeCampaign.date_time_initial))
+
     pool.query(
         dailyQuery,
         [
-            convertSydneyLocalDateToUTC(activeCampaign.date_time_initial),
+            activeCampaign.date_time_initial,
             user.user_id,
-            convertSydneyLocalDateToUTC(activeCampaign.date_time_initial),
-            convertSydneyLocalDateToUTC(activeCampaign.date_time_final),
+            activeCampaign.date_time_initial,
+            activeCampaign.date_time_final,
         ],
         (err, dailyGroupedResults) => {
             if (err) {
