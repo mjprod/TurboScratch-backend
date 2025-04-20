@@ -141,26 +141,21 @@ router.post("/", (req, res) => {
 // and return the response with "current_week" and "days" as an array.
 function fetchDailyDataAndReturn(user, activeCampaign, res) {
     // Calculate the total number of weeks in the campaign
-    const campaignStart = new Date(activeCampaign.date_time_initial);
-    const campaignEnd = new Date(activeCampaign.date_time_final);
+    const campaignStart = new Date(convertSydneyLocalDateToUTC(activeCampaign.date_time_initial));
+    const campaignEnd = new Date(convertSydneyLocalDateToUTC(activeCampaign.date_time_final));
     const today = new Date();
 
     const diffDays = Math.ceil(
         (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24)
     );
 
-    console.log(diffDays)
-
     const totalWeeks = Math.ceil(diffDays / 7);
-    console.log(totalWeeks)
     const truncateToDate = (dt) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
     
     const daysSinceStart = Math.floor(
         (truncateToDate(today) - truncateToDate(campaignStart)) / (1000 * 60 * 60 * 24)
     );
-    console.log(daysSinceStart)
     const currentWeek = Math.floor(daysSinceStart / 7) + 1;
-    console.log(currentWeek)
     // Query to group daily records by week relative to the campaign start date.
     // The week is computed as: FLOOR(DATEDIFF(create_at, campaignStart) / 7) + 1.
     const dailyQuery = `
