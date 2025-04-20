@@ -14,10 +14,13 @@ function formatDate(date) {
 }
 
 function getCurrentDate() {
-  const currentDate = new Date();
-  const formattedDate = `${currentDate.getFullYear()}-${String(
-    currentDate.getMonth() + 1
-  ).padStart(2, "0")}-${String(currentDate.getDate()).padStart(2, "0")}`;
+  const now = new Date();
+  const sydneyDate = new Date(
+    now.toLocaleString("en-US", { timeZone: "Australia/Sydney" })
+  );
+  const formattedDate = `${sydneyDate.getFullYear()}-${String(
+    sydneyDate.getMonth() + 1
+  ).padStart(2, "0")}-${String(sydneyDate.getDate()).padStart(2, "0")}`;
   return formattedDate;
 }
 
