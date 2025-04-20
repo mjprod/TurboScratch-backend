@@ -1,7 +1,7 @@
 const express = require("express");
 const pool = require("../configs/db");
 const router = express.Router();
-const { getCurrentDate } = require("../utils/datetime")
+const { getCurrentDate, convertSydneyLocalDateToUTC } = require("../utils/datetime")
 
 // Endpoint to fetch user details by user_id
 // To register a new user, include 'name' and 'email' as query parameters (e.g. /users/1?name=John&email=john@example.com)
@@ -56,8 +56,8 @@ router.post("/", (req, res) => {
                 const userName = name;
                 const userEmail = email;
                 const insertQuery = `
-            INSERT INTO Users (user_id, name, email, total_score, lucky_symbol_balance, ticket_balance, card_balance, current_beta_block)
-            VALUES (?, ?, ?, 0, 0, 0, 0, NULL)`;
+                    INSERT INTO Users (user_id, name, email, total_score, lucky_symbol_balance, ticket_balance, card_balance, current_beta_block)
+                    VALUES (?, ?, ?, 0, 0, 0, 0, NULL)`;
                 pool.query(
                     insertQuery,
                     [user_id, userName, userEmail],
@@ -148,13 +148,19 @@ function fetchDailyDataAndReturn(user, activeCampaign, res) {
     const diffDays = Math.ceil(
         (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24)
     );
+
+    console.log(diffDays)
+
     const totalWeeks = Math.ceil(diffDays / 7);
-
+    console.log(totalWeeks)
+    const truncateToDate = (dt) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    
     const daysSinceStart = Math.floor(
-        (today - campaignStart) / (1000 * 60 * 60 * 24)
+        (truncateToDate(today) - truncateToDate(campaignStart)) / (1000 * 60 * 60 * 24)
     );
+    console.log(daysSinceStart)
     const currentWeek = Math.floor(daysSinceStart / 7) + 1;
-
+    console.log(currentWeek)
     // Query to group daily records by week relative to the campaign start date.
     // The week is computed as: FLOOR(DATEDIFF(create_at, campaignStart) / 7) + 1.
     const dailyQuery = `
@@ -165,17 +171,17 @@ function fetchDailyDataAndReturn(user, activeCampaign, res) {
       FROM Daily
       WHERE user_id = ? 
         AND create_at BETWEEN ? AND ?
-      GROUP BY week
-      ORDER BY week ASC;
+      GROUP BY 1
+      ORDER BY 1 ASC
     `;
-
+    console.log(convertSydneyLocalDateToUTC(activeCampaign.date_time_initial))
     pool.query(
         dailyQuery,
         [
-            activeCampaign.date_time_initial,
+            convertSydneyLocalDateToUTC(activeCampaign.date_time_initial),
             user.user_id,
-            activeCampaign.date_time_initial,
-            activeCampaign.date_time_final,
+            convertSydneyLocalDateToUTC(activeCampaign.date_time_initial),
+            convertSydneyLocalDateToUTC(activeCampaign.date_time_final),
         ],
         (err, dailyGroupedResults) => {
             if (err) {

@@ -9,7 +9,8 @@ const { api_prefix } = require("./utils/constants");
 const app = express();
 
 app.use(cors({
-    origin: 'https://feature-staging.d1izslsso66vbm.amplifyapp.com',
+    // origin: 'https://feature-staging.d1izslsso66vbm.amplifyapp.com',
+    origin: 'http://192.168.1.103:3000',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));

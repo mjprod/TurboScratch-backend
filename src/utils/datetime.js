@@ -24,5 +24,30 @@ function getCurrentDate() {
   return formattedDate;
 }
 
+/**
+ * Convert a Date object representing a Sydney-local datetime
+ * into the equivalent UTC datetime string (YYYY-MM-DD HH:mm:ss).
+ *
+ * @param {Date} dateObj - JavaScript Date representing a Sydney-local datetime.
+ * @returns {string} UTC datetime in 'YYYY-MM-DD HH:mm:ss' format.
+ */
+function convertSydneyLocalDateToUTC(dateObj) {
+  // Build UTC components directly from the Date object
+  const pad = (n) => String(n).padStart(2, '0');
+  const year = dateObj.getUTCFullYear();
+  const month = pad(dateObj.getUTCMonth() + 1);
+  const day = pad(dateObj.getUTCDate());
+  const hours = pad(dateObj.getUTCHours());
+  const minutes = pad(dateObj.getUTCMinutes());
+  const seconds = pad(dateObj.getUTCSeconds());
+  const sydneyDate = new Date(`${year}-${month}-${day}T${hours}:${minutes}:${seconds}`);
 
-module.exports = { getCurrentWeekStartDate, getCurrentDate, formatDate };
+  return sydneyDate.toISOString();
+}
+
+module.exports = {
+  getCurrentWeekStartDate,
+  getCurrentDate,
+  formatDate,
+  convertSydneyLocalDateToUTC,
+};
