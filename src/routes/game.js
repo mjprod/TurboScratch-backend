@@ -39,10 +39,10 @@ router.post("/update_card_played", (req, res) => {
             return res.status(500).json({ error: err.message });
         }
         const betaBlockQuery = `
-      SELECT *
-      FROM BetaBlocks
-      WHERE beta_block_id = ?;
-    `;
+            SELECT *
+            FROM BetaBlocks
+            WHERE beta_block_id = ?;
+        `;
         pool.query(betaBlockQuery, [beta_block_id], (err, betaBlockResult) => {
             if (err) {
                 console.error("Error Getting BetaBlocks data:", err);
@@ -79,10 +79,10 @@ router.post("/update_card_played", (req, res) => {
                             dailyBlockResult.cards_played < dailyBlockResult.cards_won
                     );
                     const updateUserScoreQuery = `
-                UPDATE Users
-                SET card_balance = card_balance - 1
-                WHERE user_id = ?;
-              `;
+                        UPDATE Users
+                        SET card_balance = card_balance - 1
+                        WHERE user_id = ?;
+                    `;
                     if (!dailyToDeduct) {
                         pool.query(updateUserScoreQuery, [user_id], (err, result) => {
                             if (err) {
@@ -95,10 +95,10 @@ router.post("/update_card_played", (req, res) => {
                         });
                     } else {
                         const updateCardsPlayedQuery = `
-                  UPDATE Daily
-                  SET cards_played = cards_played + 1
-                  WHERE user_id = ? AND daily_id = ?;
-                `;
+                            UPDATE Daily
+                            SET cards_played = cards_played + 1
+                            WHERE user_id = ? AND daily_id = ?;
+                            `;
                         pool.query(
                             updateCardsPlayedQuery,
                             [user_id, dailyToDeduct.daily_id],
@@ -213,13 +213,13 @@ router.post("/update_card_balance", (req, res) => {
         }
         const updateCardBalanceQuery = `
             UPDATE Users
-            SET card_balance = (SELECT count(*) FROM Games WHERE user_id=? and played=0)
+            SET card_balance = (SELECT count(*) FROM Games WHERE user_id=? and played=0 and beta_block_id=?)
             WHERE user_id = ?;
         `;
         console.log("CardBalance Update Query", updateCardBalanceQuery);
         pool.query(
             updateCardBalanceQuery,
-            [user_id, user_id],
+            [user_id, user_id, beta_block_id],
             (err, result) => {
                 if (err) {
                     console.error("Error Updating User data:", err);

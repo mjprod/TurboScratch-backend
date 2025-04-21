@@ -104,10 +104,10 @@ router.post("/answer", (req, res) => {
                         }
                         const updateUserQuery = `
                             UPDATE Users
-                            SET card_balance = (SELECT count(*) FROM Games WHERE user_id = ? and played=0)
+                            SET card_balance = (SELECT count(*) FROM Games WHERE user_id = ? and played=0 and beta_block_id=?)
                             WHERE user_id = ?;
                         `;
-                        pool.query(updateUserQuery, [user_id, user_id], (err, updateResult) => {
+                        pool.query(updateUserQuery, [user_id, user_id, beta_block_id], (err, updateResult) => {
                             if (err) {
                                 console.error("Error updating user balance:", err);
                                 return res.status(500).json({ error: err.message });
