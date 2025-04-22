@@ -192,7 +192,7 @@ router.post("/update_lucky_symbol", (req, res) => {
 });
 
 router.post("/update_card_balance", (req, res) => {
-    const { user_id, beta_block_id,  increase_card_balance } = req.body;
+    const { user_id, beta_block_id, increase_card_balance } = req.body;
     if (
         !user_id ||
         !beta_block_id ||
@@ -205,6 +205,7 @@ router.post("/update_card_balance", (req, res) => {
             .json({ error: "user_id & card_balance are required" });
     }
 
+    console.log("BetaBlockId", beta_block_id)
 
     createGamesForDaily(user_id, increase_card_balance, beta_block_id, (err, gameResult) => {
         if (err) {
@@ -219,7 +220,7 @@ router.post("/update_card_balance", (req, res) => {
         console.log("CardBalance Update Query", updateCardBalanceQuery);
         pool.query(
             updateCardBalanceQuery,
-            [user_id, user_id, beta_block_id],
+            [user_id, beta_block_id, user_id],
             (err, result) => {
                 if (err) {
                     console.error("Error Updating User data:", err);

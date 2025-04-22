@@ -45,9 +45,9 @@ router.post("/insert", (req, res) => {
 
         // If no active BetaBlocks exists, proceed with the insertion
         const insertQuery = `
-        INSERT INTO BetaBlocks (beta_block_description, date_time_initial, date_time_final)
-        VALUES (?, ?, ?)
-      `;
+            INSERT INTO BetaBlocks (beta_block_description, date_time_initial, date_time_final)
+            VALUES (?, ?, ?)
+        `;
         pool.query(
             insertQuery,
             [beta_block_description, date_time_initial, date_time_final],
