@@ -53,9 +53,9 @@ router.post("/answer", (req, res) => {
 
     const checkAnswerQuery = `
       SELECT * FROM Answers
-      WHERE question_id = ? AND user_id = ?
+      WHERE question_id = ? AND user_id = ? AND beta_block_id = ?
     `;
-    pool.query(checkAnswerQuery, [question_id, user_id], (err, existingRows) => {
+    pool.query(checkAnswerQuery, [question_id, user_id, beta_block_id], (err, existingRows) => {
         if (err) {
             console.error("Error checking existing answer:", err);
             return res.status(500).json({ error: err.message });
