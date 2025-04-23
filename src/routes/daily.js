@@ -9,9 +9,9 @@ router.post("/question", (req, res) => {
         return res.status(400).json({ error: "user_id and beta_block_id are required" });
     }
 
-    const selectMaxQuery = "SELECT MAX(question_id) AS maxQuestion FROM Answers WHERE user_id = ?";
+    const selectMaxQuery = "SELECT MAX(question_id) AS maxQuestion FROM Answers WHERE user_id = ? AND beta_block_id=?";
 
-    pool.query(selectMaxQuery, [user_id], (err, results) => {
+    pool.query(selectMaxQuery, [user_id, beta_block_id], (err, results) => {
         if (err) {
             console.error("Error selecting max question_id:", err);
             return res.status(500).json({ error: err.message });
@@ -76,17 +76,18 @@ router.post("/answer", (req, res) => {
 
             const cards_played = 0;
             const insertDailyQuery = `
-                INSERT INTO Daily (user_id, cards_won, cards_played, question_id)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO Daily (user_id, cards_won, cards_played, question_id, beta_block_id)
+                VALUES (?, ?, ?, ?, ?)
             `;
-            pool.query(insertDailyQuery, [user_id, cards_won, cards_played, question_id], (err, dailyResult) => {
+            pool.query(insertDailyQuery, [user_id, cards_won, cards_played, question_id, beta_block_id], (err, dailyResult) => {
                 if (err) {
                     console.error("Error inserting daily record:", err);
                     return res.status(500).json({ error: err.message });
                 }
                 const dailyId = dailyResult.insertId;
-                const selectDailyQuery = "SELECT * FROM Daily WHERE daily_id = ?";
-                pool.query(selectDailyQuery, [dailyId], (err, dailyRecords) => {
+                const selectDailyQuery = "SELECT * FROM Daily WHERE daily_id = ? AND beta_block_id = ?";
+
+                pool.query(selectDailyQuery, [dailyId, beta_block_id], (err, dailyRecords) => {
                     console.log("Daily Records", dailyRecords)
                     if (err) {
                         console.error("Error fetching daily record:", err);
@@ -104,7 +105,7 @@ router.post("/answer", (req, res) => {
                         }
                         const updateUserQuery = `
                             UPDATE Users
-                            SET card_balance = (SELECT count(*) FROM Games WHERE user_id = ? and played=0 and beta_block_id=?)
+                            SET card_balance = (SELECT count(*) FROM Games WHERE user_id = ? and played = 0 and beta_block_id = ?)
                             WHERE user_id = ?;
                         `;
                         pool.query(updateUserQuery, [user_id, beta_block_id, user_id], (err, updateResult) => {
