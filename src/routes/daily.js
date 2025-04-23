@@ -76,10 +76,10 @@ router.post("/answer", (req, res) => {
 
             const cards_played = 0;
             const insertDailyQuery = `
-                INSERT INTO Daily (user_id, cards_won, cards_played, question_id)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO Daily (user_id, cards_won, cards_played, question_id, beta_block_id)
+                VALUES (?, ?, ?, ?, ?)
             `;
-            pool.query(insertDailyQuery, [user_id, cards_won, cards_played, question_id], (err, dailyResult) => {
+            pool.query(insertDailyQuery, [user_id, cards_won, cards_played, question_id, beta_block_id], (err, dailyResult) => {
                 if (err) {
                     console.error("Error inserting daily record:", err);
                     return res.status(500).json({ error: err.message });
