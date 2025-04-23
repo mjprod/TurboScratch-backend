@@ -65,10 +65,10 @@ router.post("/answer", (req, res) => {
         }
 
         const insertAnswerQuery = `
-            INSERT INTO Answers (answer, question_id, user_id)
-            VALUES (?, ?, ?)
+            INSERT INTO Answers (answer, question_id, user_id, beta_block_id)
+            VALUES (?, ?, ?, ?)
         `;
-        pool.query(insertAnswerQuery, [answer, question_id, user_id], (err, answerResult) => {
+        pool.query(insertAnswerQuery, [answer, question_id, user_id, beta_block_id], (err, answerResult) => {
             if (err) {
                 console.error("Error inserting answer:", err);
                 return res.status(500).json({ error: err.message });
