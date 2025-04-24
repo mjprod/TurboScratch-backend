@@ -4,26 +4,41 @@ const bodyParser = require("body-parser");
 const startLeaderboardCronJob = require("./corns/leaderboard");
 const apiKeyMiddleware = require('./middlewares/authMiddleware');
 const cryptoMiddleware = require('./middlewares/cryptoMiddlewear');
+const { api_prefix } = require("./utils/constants");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: process.env.CORS_ORIGIN,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+app.options("*", cors());
+
 app.use(bodyParser.json());
 
-app.use(cryptoMiddleware)
+app.use(cryptoMiddleware);
 
-app.get('/', (req, res) => {
+const router = express.Router();
+
+router.get('/', (req, res) => {
     res.send('Hello, you are authorized!');
 });
 
+router.use('/health', require('./routes/health'));
+router.use('/users', require('./routes/users'));
+router.use('/daily', apiKeyMiddleware, require('./routes/daily'));
+router.use('/game', apiKeyMiddleware, require('./routes/game'));
+router.use('/leaderboard', apiKeyMiddleware, require('./routes/leaderboard'));
+router.use('/betablocks', require('./routes/betablocks'));
+router.use('/winners', apiKeyMiddleware, require('./routes/winners'));
+router.use('/login', require('./routes/login'));
+router.use('/config', require('./routes/config'));
+router.use('/questions', require('./routes/questions'));
 
-app.use("/health", require("./routes/health"));
-app.use("/users", require("./routes/users"));
-app.use("/daily", apiKeyMiddleware, require("./routes/daily"));
-app.use("/game", apiKeyMiddleware, require("./routes/game"));
-app.use("/leaderboard", apiKeyMiddleware, require("./routes/leaderboard"));
-app.use("/betablock", apiKeyMiddleware, require("./routes/betablock"));
-app.use("/winners", apiKeyMiddleware, require("./routes/winners"));
+app.use(api_prefix, router);
+
 startLeaderboardCronJob();
 
 module.exports = app;

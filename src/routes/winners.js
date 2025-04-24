@@ -7,9 +7,9 @@ router.get("/", (req, res) => {
     const nowUTC = new Date().toISOString().slice(0, 19).replace("T", " ");
     console.log("nowUTC:", nowUTC);
 
-    // 1. Check if there is an active campaign (BetaBlock) based on the current UTC date/time
+    // 1. Check if there is an active campaign (BetaBlocks) based on the current UTC date/time
     const campaignQuery = `
-      SELECT * FROM BetaBlock 
+      SELECT * FROM BetaBlocks 
       WHERE ? BETWEEN date_time_initial AND date_time_final
       ORDER BY beta_block_id DESC
       LIMIT 1
@@ -36,7 +36,25 @@ router.get("/", (req, res) => {
         console.log("Calculated current week:", currentWeek);
 
         // 3. Query a random user from the Users table.
-        const userQuery = "SELECT * FROM Users ORDER BY RAND() LIMIT 1";
+        const userQuery = `SELECT *
+            FROM (
+            SELECT u.*
+            FROM Users u
+            JOIN (
+                SELECT units.n + tens.n + hundreds.n AS n
+                FROM 
+                (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+                UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) units,
+                (SELECT 0 AS n UNION ALL SELECT 10 UNION ALL SELECT 20 UNION ALL SELECT 30 UNION ALL SELECT 40
+                UNION ALL SELECT 50 UNION ALL SELECT 60 UNION ALL SELECT 70 UNION ALL SELECT 80 UNION ALL SELECT 90) tens,
+                (SELECT 0 AS n UNION ALL SELECT 100 UNION ALL SELECT 200 UNION ALL SELECT 300 UNION ALL SELECT 400
+                UNION ALL SELECT 500 UNION ALL SELECT 600 UNION ALL SELECT 700 UNION ALL SELECT 800 UNION ALL SELECT 900) hundreds
+            ) nums
+            ON nums.n < u.ticket_balance
+            ) expanded
+            ORDER BY RAND()
+            LIMIT 1;`;
+
         pool.query(userQuery, (err, userResults) => {
             if (err) {
                 console.error("Error fetching user:", err);
