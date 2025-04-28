@@ -107,21 +107,29 @@ router.put("/:id", async (req, res) => {
 });
 
 // DELETE BetaBlocks record by ID
-router.delete("/:id", (req, res) => {
+router.delete("/:id", async (req, res) => {
     const { id } = req.params;
-    const query = "DELETE FROM BetaBlocks WHERE beta_block_id = ?";
-    pool.query(query, [id], (err, results) => {
-        if (err) {
-            console.error("Database error:", err);
-            return res.status(500).json({ error: err.message });
-        }
-        const changeCurrentBetaBlockInUser = "UPDATE Users SET current_beta_block = ?;"
-        pool.query(changeCurrentBetaBlockInUser, [id - 1], (err, results) => {
+    try {
+        await pool.promise().query(`DELETE FROM BetaBlocks WHERE beta_block_id = ?`, [id])
+        const [previousBetaBlocks] = await pool.promise().query(`SELECT * FROM turbo_scratch.BetaBlocks where beta_block_id < ?;`, [newBetaBlockId]);
+
+        if (previousBetaBlocks.length > 0) {
+            const perviousBetaBlockId = previousBetaBlocks[previousBetaBlocks.length - 1].beta_block_id;
+            console.log("Found Previous BetaBlock id=", perviousBetaBlockId)
+            await pool.promise().query(`UPDATE Users SET current_beta_block = ?;`, [perviousBetaBlockId]);
             res.status(200).json({
                 message: "BetaBlocks record deleted successfully!",
             });
-        })
-    });
+        } else {
+            return res.status(200).json({
+                message: "BetaBlocks record created successfully No Previous betablock found!",
+                betaBlockId: newBetaBlockId,
+            });
+        }
+    } catch (err) {
+        console.error("Database error:", err);
+        return res.status(500).json({ error: err.message });
+    }
 });
 
 
