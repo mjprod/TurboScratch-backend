@@ -29,7 +29,7 @@ router.post("/question", (req, res) => {
                 return res.status(500).json({ error: err.message });
             }
             if (questionResults.length === 0) {
-                return res.status(404).json({ error: "Question not found" });
+                return res.status(200).json({ error: "Question not found" });
             }
 
             return res.status(200).json({

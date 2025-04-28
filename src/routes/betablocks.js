@@ -16,8 +16,8 @@ router.get("/", (req, res) => {
     });
 });
 
-router.post("/insert", (req, res) => {
-    const { beta_block_description, date_time_initial, date_time_final } = req.body;
+router.post("/insert", async (req, res) => {
+    const { beta_block_description, date_time_initial, date_time_final, copy_questions } = req.body;
 
     if (!beta_block_description || !date_time_initial || !date_time_final) {
         return res.status(400).json({
@@ -25,17 +25,12 @@ router.post("/insert", (req, res) => {
         });
     }
 
-    // Check if there's any BetaBlocks whose final date has not been reached yet
-    const checkQuery = `
-      SELECT * FROM BetaBlocks 
-      WHERE date_time_final > NOW()
-    `;
-
-    pool.query(checkQuery, (checkErr, activeBlocks) => {
-        if (checkErr) {
-            console.error("Database error (checking active blocks):", checkErr);
-            return res.status(500).json({ error: checkErr.message });
-        }
+    try {
+        // 1. Check if active BetaBlocks already exist
+        const [activeBlocks] = await pool.promise().query(`
+            SELECT * FROM BetaBlocks 
+            WHERE date_time_final > NOW()
+        `);
 
         if (activeBlocks.length > 0) {
             return res.status(400).json({
@@ -43,57 +38,98 @@ router.post("/insert", (req, res) => {
             });
         }
 
-        // If no active BetaBlocks exists, proceed with the insertion
-        const insertQuery = `
+        // 2. Insert new BetaBlock
+        const [betaBlockResult] = await pool.promise().query(`
             INSERT INTO BetaBlocks (beta_block_description, date_time_initial, date_time_final)
             VALUES (?, ?, ?)
-        `;
-        pool.query(
-            insertQuery,
-            [beta_block_description, date_time_initial, date_time_final],
-            (err, results) => {
-                if (err) {
-                    console.error("Database error (insert):", err);
-                    return res.status(500).json({ error: err.message });
-                }
-                res.status(200).json({
-                    message: "BetaBlocks record created successfully!",
-                    betaBlockId: results.insertId,
+        `, [beta_block_description, date_time_initial, date_time_final]);
+
+        const newBetaBlockId = betaBlockResult.insertId;
+
+        // 3. Update Users table
+        await pool.promise().query(`
+            UPDATE Users SET current_beta_block = ?
+        `, [newBetaBlockId]);
+
+        const [previousBetaBlocks] = await pool.promise().query(`SELECT * FROM turbo_scratch.BetaBlocks where beta_block_id < ?;`, [newBetaBlockId]);
+
+        if (previousBetaBlocks.length > 0) {
+            const perviousBetaBlockId = previousBetaBlocks[previousBetaBlocks.length - 1].beta_block_id;
+            console.log("Found Previous BetaBlock id=", perviousBetaBlockId)
+            // 4. Optionally copy Questions
+            if (copy_questions) {
+                console.log("Copying Questions")
+                await pool.promise().query(`
+                    INSERT INTO Questions (question, actived, beta_block_id)
+                    SELECT question, actived, ?
+                    FROM Questions
+                    WHERE beta_block_id = ?
+                `, [newBetaBlockId, perviousBetaBlockId]);
+                return res.status(200).json({
+                    message: "BetaBlocks record created and questions copied successfully!",
+                    betaBlockId: newBetaBlockId,
+                });
+            } else {
+                console.log("Not Copying Questions")
+                return res.status(200).json({
+                    message: "BetaBlocks record created successfully without copying questions!",
+                    betaBlockId: newBetaBlockId,
                 });
             }
-        );
-    });
+        } else {
+            return res.status(200).json({
+                message: "BetaBlocks record created successfully No Previous betablock found!",
+                betaBlockId: newBetaBlockId,
+            });
+        }
+    } catch (err) {
+        console.error("Database error:", err);
+        return res.status(500).json({ error: err.message });
+    }
 });
 
 // PUT update BetaBlocks record by ID
-router.put("/:id", (req, res) => {
+router.put("/:id", async (req, res) => {
     const { id } = req.params;
     const { beta_block_description, date_time_initial, date_time_final } = req.body;
-    const query = "UPDATE BetaBlocks SET beta_block_description = ?, date_time_initial = ?, date_time_final = ? extended = 'true' WHERE beta_block_id = ?";
-    pool.query(query, [beta_block_description, date_time_initial, date_time_final, id], (err, results) => {
-        if (err) {
-            console.error("Database error:", err);
-            return res.status(500).json({ error: err.message });
-        }
+    try {
+        const query = "UPDATE BetaBlocks SET beta_block_description = ?, date_time_initial = ?, date_time_final = ?, extended = 'true' WHERE beta_block_id = ?";
+        await pool.promise().query(query, [beta_block_description, date_time_initial, date_time_final, id]);
         res.status(200).json({
             message: "BetaBlocks record updated successfully!",
         });
-    });
-});
-
-// DELETE BetaBlocks record by ID
-router.delete("/:id", (req, res) => {
-    const { id } = req.params;
-    const query = "DELETE FROM BetaBlocks WHERE beta_block_id = ?";
-    pool.query(query, [id], (err, results) => {
+    } catch (err) {
         if (err) {
             console.error("Database error:", err);
             return res.status(500).json({ error: err.message });
         }
-        res.status(200).json({
-            message: "BetaBlocks record deleted successfully!",
-        });
-    });
+    }
+});
+
+// DELETE BetaBlocks record by ID
+router.delete("/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.promise().query(`DELETE FROM BetaBlocks WHERE beta_block_id = ?`, [id])
+        const [previousBetaBlocks] = await pool.promise().query(`SELECT * FROM turbo_scratch.BetaBlocks where beta_block_id < ?;`, [newBetaBlockId]);
+
+        if (previousBetaBlocks.length > 0) {
+            const perviousBetaBlockId = previousBetaBlocks[previousBetaBlocks.length - 1].beta_block_id;
+            console.log("Found Previous BetaBlock id=", perviousBetaBlockId)
+            await pool.promise().query(`UPDATE Users SET current_beta_block = ?;`, [perviousBetaBlockId]);
+            res.status(200).json({
+                message: "BetaBlocks record deleted successfully!",
+            });
+        } else {
+            return res.status(200).json({
+                message: "BetaBlocks record created successfully No Previous betablock found!",
+                betaBlockId: newBetaBlockId,
+            });
+        }
+    } catch (err) {
+        console.error("Database error:", err);
+        return res.status(500).json({ error: err.message });
+    }
 });
 
 
