@@ -127,13 +127,7 @@ router.post("/", (req, res) => {
     });
 });
 
-// Helper function to fetch daily data for the active campaign period, grouped by week, and return the response
-// Helper function to fetch daily data for the active campaign period,
-// grouped by week (relative to the campaign start), and return the response.
-// Helper function to fetch daily data for the active campaign period, grouped by week (relative to campaign start),
-// and return the response with "current_week" and "days" as an array.
 function fetchDailyDataAndReturn(user, activeCampaign, res) {
-    // Calculate the total number of weeks in the campaign
     const campaignStart = new Date(activeCampaign.date_time_initial);
     const campaignEnd = new Date(activeCampaign.date_time_final);
     const today = new Date();
@@ -148,8 +142,6 @@ function fetchDailyDataAndReturn(user, activeCampaign, res) {
     );
     const currentWeek = Math.floor(daysSinceStart / 7) + 1;
 
-    // Query to group daily records by week relative to the campaign start date.
-    // The week is computed as: FLOOR(DATEDIFF(create_at, campaignStart) / 7) + 1.
     const dailyQuery = `
       SELECT 
         FLOOR(DATEDIFF(create_at, ?) / 7) + 1 AS week,
