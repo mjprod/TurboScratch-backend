@@ -216,26 +216,32 @@ router.post("/update_card_balance", (req, res) => {
             console.error("Error inserting games:", err);
             return res.status(500).json({ error: err.message });
         }
-        const updateCardBalanceQuery = `
-            UPDATE Users
-            SET card_balance = (SELECT count(*) FROM Games WHERE user_id=? and played=0 and beta_block_id=?)
-            WHERE user_id = ?;
-        `;
-        console.log("CardBalance Update Query", updateCardBalanceQuery);
-        pool.query(
-            updateCardBalanceQuery,
-            [user_id, beta_block_id, user_id],
-            (err, result) => {
-                if (err) {
-                    console.error("Error Updating User data:", err);
-                    return res.status(500).json({ error: err.message });
-                }
-                return res.status(200).json({
-                    ...result,
-                    insertedGames: gameResult.affectedRows
-                });
+        getCurrentWeek((err, currentweek) => {
+            if (err) {
+                console.error("Error getting current week:", err);
+                return res.status(500).json({ error: err.message });
             }
-        );
+            const updateUserQuery = `
+                UPDATE Users
+                SET card_balance = (SELECT count(*) FROM Games WHERE user_id = ? and played = 0 and beta_block_id = ? and week = ?)
+                WHERE user_id = ?;
+            `;
+            console.log("CardBalance Update Query", updateUserQuery);
+            pool.query(
+                updateUserQuery,
+                [user_id, beta_block_id, currentweek, user_id],
+                (err, result) => {
+                    if (err) {
+                        console.error("Error Updating User data:", err);
+                        return res.status(500).json({ error: err.message });
+                    }
+                    return res.status(200).json({
+                        ...result,
+                        insertedGames: gameResult.affectedRows
+                    });
+                }
+            );
+        });
     });
 });
 
