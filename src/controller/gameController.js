@@ -1,8 +1,6 @@
 const pool = require("../configs/db");
-const { getCurrentActiveBetaBlock } = require("./betaBlockController");
+const { getCurrentActiveBetaBlock, getCurrentWeek } = require("./betaBlockController");
 
-// Function to get the configuration distribution from the 'Config' table
-// The 'Config' table should have columns: type (e.g., 'x0', 'x1', 'x2', 'x3', 'x4', 'ls') and value (percentage or value for ls)
 function getConfigDistribution(callback) {
   const configQuery = "SELECT type, value FROM Config WHERE type IN ('x0','x1','x2','x3','x4','ls')";
   pool.query(configQuery, (err, results) => {
@@ -16,8 +14,6 @@ function getConfigDistribution(callback) {
   });
 }
 
-// Function to calculate how many games should be generated for each category (x0 to x4)
-// It uses only the percentages for x0 to x4 (their sum should be 100)
 function calculateAssignments(cardsWon, distribution) {
   let assignments = {};
   let totalAssigned = 0;
@@ -44,7 +40,6 @@ function calculateAssignments(cardsWon, distribution) {
   return assignments;
 }
 
-// Function to transform the assignments object into an array
 function getAssignmentArray(assignments) {
   let arr = [];
   for (const rule in assignments) {
@@ -55,10 +50,8 @@ function getAssignmentArray(assignments) {
   return arr;
 }
 
-// Function to generate theme assignments in blocks (games with the same theme remain together)
 function getThemeAssignments(cardsWon) {
   const themeIds = [1, 2, 3, 4];
-  // Shuffle the order of themes to vary the blocks
   themeIds.sort(() => Math.random() - 0.5);
   const numThemes = themeIds.length;
   const blockSize = Math.floor(cardsWon / numThemes);
@@ -79,7 +72,6 @@ function getThemeAssignments(cardsWon) {
   return assignments;
 }
 
-// Function to get current lucky symbol info for the user and beta_block
 function getCurrentLuckyInfo(user_id, beta_block_id, callback) {
   const query = `
     SELECT 
@@ -99,27 +91,16 @@ function getCurrentLuckyInfo(user_id, beta_block_id, callback) {
 }
 
 function getRandomInt(min, max) {
-  // Ensure the min and max are integers.
   min = Math.ceil(min);
   max = Math.floor(max);
-  // Generate a random number between min (inclusive) and max (inclusive)
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 
 function createGamesForDaily(user_id, cards_won, beta_block_id, callback) {
   const cardsWon = cards_won;
-  getCurrentActiveBetaBlock((err, activeCampaign) => {
+  getCurrentWeek((err, currentWeek) => {
     if (err) return callback(err)
-    const campaignStart = new Date(activeCampaign.date_time_initial);
-    const today = new Date();
-
-    const daysSinceStart = Math.floor(
-      (today - campaignStart) / (1000 * 60 * 60 * 24)
-    );
-
-    const currentWeek = Math.floor(daysSinceStart / 7) + 1;
-
     getConfigDistribution((err, configDistribution) => {
       if (err) return callback(err);
       const assignments = calculateAssignments(cardsWon, configDistribution);

@@ -3,6 +3,7 @@ const pool = require("../configs/db");
 const router = express.Router();
 const { ticket_milestorne } = require("../utils/constants");
 const { createGamesForDaily } = require("../controller/gameController");
+const { getCurrentWeek } = require("../controller/betaBlockController");
 
 router.post("/", (req, res) => {
     const { beta_block_id, user_id } = req.body;
@@ -11,16 +12,19 @@ router.post("/", (req, res) => {
             .status(400)
             .json({ error: "beta_block_id and user_id are required" });
     }
-    const query = `SELECT * FROM turbo_scratch.Games WHERE user_id = ? AND beta_block_id=? AND played=0 LIMIT 12;`;
-    pool.query(query, [user_id, beta_block_id], (err, results) => {
-        if (err) {
-            console.error("Database error:", err);
-            return res.status(500).json({ error: err.message });
-        }
-        res.status(200).json({
-            games: results,
+    getCurrentWeek((err, currentWeek) => {
+        if (err) return callback(err)
+        const query = `SELECT * FROM turbo_scratch.Games WHERE user_id = ? AND beta_block_id=? AND played=0 AND week=? LIMIT 12;`;
+        pool.query(query, [user_id, beta_block_id, currentWeek], (err, results) => {
+            if (err) {
+                console.error("Database error:", err);
+                return res.status(500).json({ error: err.message });
+            }
+            res.status(200).json({
+                games: results,
+            });
         });
-    });
+    })
 });
 
 router.post("/update_card_played", (req, res) => {
