@@ -54,8 +54,9 @@ router.post("/", (req, res) => {
                 const userName = name;
                 const userEmail = email;
                 const insertQuery = `
-            INSERT INTO Users (user_id, name, email, total_score, lucky_symbol_balance, ticket_balance, card_balance, current_beta_block)
-            VALUES (?, ?, ?, 0, 0, 0, 0, NULL)`;
+                    INSERT INTO Users (user_id, name, email, total_score, lucky_symbol_balance, ticket_balance, card_balance, current_beta_block)
+                    VALUES (?, ?, ?, 0, 0, 0, 0, NULL)
+                `;
                 pool.query(
                     insertQuery,
                     [user_id, userName, userEmail],
@@ -143,10 +144,10 @@ function fetchDailyDataAndReturn(user, activeCampaign, res) {
     const campaignEnd = new Date(activeCampaign.date_time_final);
     const today = new Date();
 
-    const diffDays = Math.ceil(
+    const diffDays = Math.floor(
         (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24)
     );
-    const totalWeeks = Math.ceil(diffDays / 7);
+    const totalWeeks = Math.floor(diffDays / 7);
 
     const daysSinceStart = Math.floor(
         (today - campaignStart) / (1000 * 60 * 60 * 24)

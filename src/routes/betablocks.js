@@ -48,7 +48,13 @@ router.post("/insert", async (req, res) => {
 
         // 3. Update Users table
         await pool.promise().query(`
-            UPDATE Users SET current_beta_block = ?
+            UPDATE Users 
+            SET 
+                current_beta_block = ?, 
+                total_score = 0,
+                lucky_symbol_balance = 0,
+                ticket_balance = 0,
+                card_balance = 0
         `, [newBetaBlockId]);
 
         const [previousBetaBlocks] = await pool.promise().query(`SELECT * FROM turbo_scratch.BetaBlocks where beta_block_id < ?;`, [newBetaBlockId]);
