@@ -88,11 +88,11 @@ router.post("/", (req, res) => {
                             `Updating user: current_beta_block (${user.current_beta_block}) is different from activeCampaign (${activeCampaign.beta_block_id}).`
                         );
                         const updateQuery = `
-                UPDATE Users 
-                SET total_score = 0, lucky_symbol_balance = 0, ticket_balance = 0, card_balance = 0, current_beta_block = ?,
-                    update_at = CURRENT_TIMESTAMP
-                WHERE user_id = ?
-              `;
+                            UPDATE Users 
+                            SET total_score = 0, lucky_symbol_balance = 0, ticket_balance = 0, card_balance = 0, current_beta_block = ?,
+                                update_at = CURRENT_TIMESTAMP
+                            WHERE user_id = ?
+                        `;
                         pool.query(
                             updateQuery,
                             [activeCampaign.beta_block_id, user_id],
