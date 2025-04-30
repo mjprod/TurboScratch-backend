@@ -3,7 +3,8 @@ const pool = require("../configs/db");
 const router = express.Router();
 const { ticket_milestorne } = require("../utils/constants");
 const { createGamesForDaily } = require("../controller/gameController");
-const { getCurrentWeek } = require("../controller/betaBlockController");
+const { getCurrentActiveBetaBlock } = require("../controller/betaBlockController");
+const { getCurrentWeek } = require("../utils/datetime");
 
 router.post("/", (req, res) => {
     const { beta_block_id, user_id } = req.body;
@@ -12,8 +13,9 @@ router.post("/", (req, res) => {
             .status(400)
             .json({ error: "beta_block_id and user_id are required" });
     }
-    getCurrentWeek((err, currentWeek) => {
+    getCurrentActiveBetaBlock((err, activeCampain) => {
         if (err) return callback(err)
+        const currentWeek = getCurrentWeek(activeCampain.date_time_initial)
         const query = `SELECT * FROM turbo_scratch.Games WHERE user_id = ? AND beta_block_id=? AND played=0 AND week=? LIMIT 12;`;
         pool.query(query, [user_id, beta_block_id, currentWeek], (err, results) => {
             if (err) {

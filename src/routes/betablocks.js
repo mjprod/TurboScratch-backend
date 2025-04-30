@@ -3,6 +3,7 @@ const express = require("express");
 const pool = require("../configs/db");
 const router = express.Router();
 const moment = require("moment");
+const { getCurrentWeek, getTotalWeeks } = require("../utils/datetime");
 
 // GET all BetaBlocks records
 router.get("/", (req, res) => {
@@ -286,15 +287,9 @@ router.get("/:id/beta_block_header", (req, res) => {
             start: campaignRow.date_time_initial,
             end: campaignRow.date_time_final,
         };
-
-        const start = moment(campaignRow.date_time_initial);
-        const end = moment(campaignRow.date_time_final);
-        const totalWeeks = end.diff(start, "weeks");
-        const now = moment();
-        let currentWeek = null;
-        if (now.isBetween(start, end, null, "[]")) {
-            currentWeek = now.diff(start, "weeks") + 1;
-        }
+        const totalWeeks = getTotalWeeks(campaignRow.date_time_initial, campaignRow.date_time_final);
+        let currentWeek = getCurrentWeek(campaignRow.date_time_initial);
+    
         const week = {
             total: totalWeeks,
             current: currentWeek,

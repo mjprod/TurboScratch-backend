@@ -23,20 +23,4 @@ const getCurrentActiveBetaBlock = async (completion) => {
         completion(err, undefined)
     }
 }
-
-const getCurrentWeek = async (completion) => {
-    getCurrentActiveBetaBlock((err, activeCampaign) => {
-        if (err) return callback(err)
-        const campaignStart = new Date(activeCampaign.date_time_initial);
-        const today = new Date();
-
-        const daysSinceStart = Math.floor(
-            (today - campaignStart) / (1000 * 60 * 60 * 24)
-        );
-
-        const currentWeek = Math.floor(daysSinceStart / 7) + 1;
-        return completion(undefined, currentWeek)
-    })
-}
-
-module.exports = { getCurrentActiveBetaBlock, getCurrentWeek };
+module.exports = { getCurrentActiveBetaBlock };

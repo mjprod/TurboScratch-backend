@@ -30,7 +30,7 @@ const startLeaderboardCronJob = (dateTime = "0 0 * * *") => {
         connection.execute(sql, [weekStartDate, weekStartDate]);
         connection.release();
         console.log(
-          `Weekly snapshot inserted for week starting ${weekStartDate}`
+          `Daily snapshot inserted for week starting ${weekStartDate}`
         );
       });
       console.log(`Running cron job at ${new Date().toISOString()}`);
