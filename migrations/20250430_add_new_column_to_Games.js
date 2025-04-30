@@ -19,19 +19,33 @@ module.exports = {
       const currentWeek = getCurrentWeek(activeCampaign.date_time_initial)
       console.log("Updating week for unplayed games where user has sufficient card balance");
       await db.query(`
-        UPDATE Games g
-        JOIN (
-          SELECT user_id, COUNT(*) AS unplayed_count
+      WITH counts AS (
+        SELECT user_id, COUNT(*) AS unplayed_count
+        FROM Games
+        WHERE played = 0
+        GROUP BY user_id
+      )
+      UPDATE Games AS g
+      INNER JOIN Users AS u ON g.user_id = u.user_id
+      INNER JOIN counts ON counts.user_id = g.user_id
+      SET g.week = ?
+      WHERE g.played = 0
+        AND g.beta_block_id = ?
+        AND counts.unplayed_count >= u.card_balance;
+      `, [currentWeek, activeCampaign.beta_block_id]);
+
+      await db.query(`
+        UPDATE Users AS u
+        INNER JOIN (
+          SELECT user_id, COUNT(*) AS new_balance
           FROM Games
           WHERE played = 0
+            AND beta_block_id = ?
+            AND week = ?
           GROUP BY user_id
-        ) AS gcount ON gcount.user_id = g.user_id
-        JOIN Users u ON u.user_id = g.user_id
-        SET g.week = ?
-        WHERE g.played = 0
-          AND g.beta_block_id = ?
-          AND gcount.unplayed_count <= u.card_balance
-      `, [currentWeek, activeCampaign.beta_block_id]);
+        ) AS g2 ON u.user_id = g2.user_id
+        SET u.card_balance = g2.new_balance;
+      `, [activeCampaign.beta_block_id, currentWeek]);
     } else {
       console.log("Active campaign found. ID:", activeCampaign.beta_block_id);
     }

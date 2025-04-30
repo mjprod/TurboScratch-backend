@@ -55,12 +55,12 @@ router.post("/update_card_played", (req, res) => {
                 return res.status(500).json({ error: err.message });
             }
             const dailyBlockQuery = `
-            SELECT *
-            FROM Daily
-            WHERE user_id = ?
-            AND create_at BETWEEN ? AND ? 
-            ORDER BY create_at ASC;
-          `;
+                SELECT *
+                FROM Daily
+                WHERE user_id = ?
+                AND create_at BETWEEN ? AND ? 
+                ORDER BY create_at ASC;
+            `;
             if (betaBlockQuery.length === 0) {
                 return res.status(404).json({ error: "Beta Block not found" });
             }
@@ -104,7 +104,7 @@ router.post("/update_card_played", (req, res) => {
                             UPDATE Daily
                             SET cards_played = cards_played + 1
                             WHERE user_id = ? AND daily_id = ?;
-                            `;
+                        `;
                         pool.query(
                             updateCardsPlayedQuery,
                             [user_id, dailyToDeduct.daily_id],
