@@ -2,7 +2,7 @@ const cron = require("node-cron");
 const pool = require("../configs/db");
 const { getCurrentWeekStartDate } = require("../utils/datetime");
 
-const startLeaderboardCronJob = (dateTime = "0 18 * * 0") => {
+const startLeaderboardCronJob = (dateTime = "0 0 * * *") => {
   cron.schedule(dateTime, async () => {
     const weekStartDate = getCurrentWeekStartDate();
     try {
@@ -12,23 +12,25 @@ const startLeaderboardCronJob = (dateTime = "0 18 * * 0") => {
           return;
         }
         const sql = `
-        INSERT INTO Leaderboard (user_id, week_start_date, score, current_rank, previous_rank)
+        INSERT INTO Leaderboard (user_id, week_start_date, score, current_rank, previous_rank, beta_block_id)
         SELECT 
-            user.user_id,
-            ? AS week_start_date,
-            user.total_score,
-            RANK() OVER (ORDER BY user.total_score DESC) AS current_rank,
-            (SELECT current_rank 
-            FROM Leaderboard 
-            WHERE user_id = user.user_id 
-            AND week_start_date = DATE_SUB(?, INTERVAL 7 DAY)
-            ) AS previous_rank
+          user.user_id, 
+          ? AS week_start_date, 
+          user.total_score,
+          RANK() OVER (ORDER BY user.total_score DESC) AS current_rank,
+            (
+              SELECT current_rank 
+              FROM Leaderboard 
+              WHERE user_id = user.user_id 
+              AND week_start_date = DATE_SUB(?, INTERVAL 7 DAY)
+            ) AS previous_rank,
+          user.current_beta_block
         FROM Users user;
     `;
         connection.execute(sql, [weekStartDate, weekStartDate]);
         connection.release();
         console.log(
-          `Weekly snapshot inserted for week starting ${weekStartDate}`
+          `Daily snapshot inserted for week starting ${weekStartDate}`
         );
       });
       console.log(`Running cron job at ${new Date().toISOString()}`);

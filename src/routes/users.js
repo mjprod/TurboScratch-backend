@@ -1,9 +1,8 @@
 const express = require("express");
 const pool = require("../configs/db");
+const { getTotalWeeks, getCurrentWeek } = require("../utils/datetime");
 const router = express.Router();
 
-// Endpoint to fetch user details by user_id
-// To register a new user, include 'name' and 'email' as query parameters (e.g. /users/1?name=John&email=john@example.com)
 router.post("/", (req, res) => {
     const { user_id, name, email } = req.body;
     if (!user_id || !name || !email) {
@@ -11,17 +10,17 @@ router.post("/", (req, res) => {
             .status(400)
             .json({ error: "beta_block_id and user_id are required" });
     }
-    // Get current date/time in UTC in the format "YYYY-MM-DD HH:MM:SS"
+
     const nowUTC = new Date().toISOString().slice(0, 19).replace("T", " ");
     console.log("nowUTC:", nowUTC);
 
-    // 1. Check if there is an active campaign (BetaBlocks) based on the current UTC date/time
     const campaignQuery = `
       SELECT * FROM BetaBlocks 
       WHERE ? BETWEEN date_time_initial AND date_time_final
       ORDER BY beta_block_id DESC
       LIMIT 1
     `;
+
     pool.query(campaignQuery, [nowUTC], (err, campaigns) => {
         if (err) {
             console.error("Error checking campaign:", err);
@@ -34,13 +33,11 @@ router.post("/", (req, res) => {
             console.log("Active campaign found. ID:", activeCampaign.beta_block_id);
         } else {
             console.log("No active campaign found.");
-            // Return a message indicating the user is out of campaign
             return res.status(200).json({
                 message: "Out of campaign",
             });
         }
 
-        // 2. Query the user from the Users table
         const userQuery = "SELECT * FROM Users WHERE user_id = ?";
         pool.query(userQuery, [user_id], (err, userResults) => {
             if (err) {
@@ -49,13 +46,13 @@ router.post("/", (req, res) => {
             }
 
             if (userResults.length === 0) {
-                // User not found: create one using provided name and email (or default values)
                 console.log("User not found, creating new user...");
                 const userName = name;
                 const userEmail = email;
                 const insertQuery = `
-            INSERT INTO Users (user_id, name, email, total_score, lucky_symbol_balance, ticket_balance, card_balance, current_beta_block)
-            VALUES (?, ?, ?, 0, 0, 0, 0, NULL)`;
+                    INSERT INTO Users (user_id, name, email, total_score, lucky_symbol_balance, ticket_balance, card_balance, current_beta_block)
+                    VALUES (?, ?, ?, 0, 0, 0, 0, NULL)
+                `;
                 pool.query(
                     insertQuery,
                     [user_id, userName, userEmail],
@@ -70,7 +67,6 @@ router.post("/", (req, res) => {
                                 return res.status(500).json({ error: err.message });
                             }
                             console.log("New user created:", newUserResults[0]);
-                            // After creating the user, fetch their daily data
                             fetchDailyDataAndReturn(newUserResults[0], activeCampaign, res);
                         });
                     }
@@ -87,11 +83,11 @@ router.post("/", (req, res) => {
                             `Updating user: current_beta_block (${user.current_beta_block}) is different from activeCampaign (${activeCampaign.beta_block_id}).`
                         );
                         const updateQuery = `
-                UPDATE Users 
-                SET total_score = 0, lucky_symbol_balance = 0, ticket_balance = 0, card_balance = 0, current_beta_block = ?,
-                    update_at = CURRENT_TIMESTAMP
-                WHERE user_id = ?
-              `;
+                            UPDATE Users 
+                            SET total_score = 0, lucky_symbol_balance = 0, ticket_balance = 0, card_balance = 0, current_beta_block = ?,
+                                update_at = CURRENT_TIMESTAMP
+                            WHERE user_id = ?
+                        `;
                         pool.query(
                             updateQuery,
                             [activeCampaign.beta_block_id, user_id],
@@ -132,29 +128,10 @@ router.post("/", (req, res) => {
     });
 });
 
-// Helper function to fetch daily data for the active campaign period, grouped by week, and return the response
-// Helper function to fetch daily data for the active campaign period,
-// grouped by week (relative to the campaign start), and return the response.
-// Helper function to fetch daily data for the active campaign period, grouped by week (relative to campaign start),
-// and return the response with "current_week" and "days" as an array.
 function fetchDailyDataAndReturn(user, activeCampaign, res) {
-    // Calculate the total number of weeks in the campaign
-    const campaignStart = new Date(activeCampaign.date_time_initial);
-    const campaignEnd = new Date(activeCampaign.date_time_final);
-    const today = new Date();
+    const totalWeeks = getTotalWeeks(activeCampaign.date_time_initial, activeCampaign.date_time_final)
+    const currentWeek = getCurrentWeek(activeCampaign.date_time_initial)
 
-    const diffDays = Math.ceil(
-        (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24)
-    );
-    const totalWeeks = Math.ceil(diffDays / 7);
-
-    const daysSinceStart = Math.floor(
-        (today - campaignStart) / (1000 * 60 * 60 * 24)
-    );
-    const currentWeek = Math.floor(daysSinceStart / 7) + 1;
-
-    // Query to group daily records by week relative to the campaign start date.
-    // The week is computed as: FLOOR(DATEDIFF(create_at, campaignStart) / 7) + 1.
     const dailyQuery = `
       SELECT 
         FLOOR(DATEDIFF(create_at, ?) / 7) + 1 AS week,

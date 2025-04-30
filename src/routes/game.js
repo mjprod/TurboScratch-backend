@@ -3,6 +3,8 @@ const pool = require("../configs/db");
 const router = express.Router();
 const { ticket_milestorne } = require("../utils/constants");
 const { createGamesForDaily } = require("../controller/gameController");
+const { getCurrentActiveBetaBlock } = require("../controller/betaBlockController");
+const { getCurrentWeek } = require("../utils/datetime");
 
 router.post("/", (req, res) => {
     const { beta_block_id, user_id } = req.body;
@@ -11,16 +13,20 @@ router.post("/", (req, res) => {
             .status(400)
             .json({ error: "beta_block_id and user_id are required" });
     }
-    const query = `SELECT * FROM turbo_scratch.Games WHERE user_id = ? AND beta_block_id=? AND played=0 LIMIT 12;`;
-    pool.query(query, [user_id, beta_block_id], (err, results) => {
-        if (err) {
-            console.error("Database error:", err);
-            return res.status(500).json({ error: err.message });
-        }
-        res.status(200).json({
-            games: results,
+    getCurrentActiveBetaBlock((err, activeCampain) => {
+        if (err) return callback(err)
+        const currentWeek = getCurrentWeek(activeCampain.date_time_initial)
+        const query = `SELECT * FROM turbo_scratch.Games WHERE user_id = ? AND beta_block_id=? AND played=0 AND week=? LIMIT 12;`;
+        pool.query(query, [user_id, beta_block_id, currentWeek], (err, results) => {
+            if (err) {
+                console.error("Database error:", err);
+                return res.status(500).json({ error: err.message });
+            }
+            res.status(200).json({
+                games: results,
+            });
         });
-    });
+    })
 });
 
 router.post("/update_card_played", (req, res) => {
@@ -49,12 +55,12 @@ router.post("/update_card_played", (req, res) => {
                 return res.status(500).json({ error: err.message });
             }
             const dailyBlockQuery = `
-            SELECT *
-            FROM Daily
-            WHERE user_id = ?
-            AND create_at BETWEEN ? AND ? 
-            ORDER BY create_at ASC;
-          `;
+                SELECT *
+                FROM Daily
+                WHERE user_id = ?
+                AND create_at BETWEEN ? AND ? 
+                ORDER BY create_at ASC;
+            `;
             if (betaBlockQuery.length === 0) {
                 return res.status(404).json({ error: "Beta Block not found" });
             }
@@ -98,7 +104,7 @@ router.post("/update_card_played", (req, res) => {
                             UPDATE Daily
                             SET cards_played = cards_played + 1
                             WHERE user_id = ? AND daily_id = ?;
-                            `;
+                        `;
                         pool.query(
                             updateCardsPlayedQuery,
                             [user_id, dailyToDeduct.daily_id],
@@ -212,26 +218,32 @@ router.post("/update_card_balance", (req, res) => {
             console.error("Error inserting games:", err);
             return res.status(500).json({ error: err.message });
         }
-        const updateCardBalanceQuery = `
-            UPDATE Users
-            SET card_balance = (SELECT count(*) FROM Games WHERE user_id=? and played=0 and beta_block_id=?)
-            WHERE user_id = ?;
-        `;
-        console.log("CardBalance Update Query", updateCardBalanceQuery);
-        pool.query(
-            updateCardBalanceQuery,
-            [user_id, beta_block_id, user_id],
-            (err, result) => {
-                if (err) {
-                    console.error("Error Updating User data:", err);
-                    return res.status(500).json({ error: err.message });
-                }
-                return res.status(200).json({
-                    ...result,
-                    insertedGames: gameResult.affectedRows
-                });
+        getCurrentWeek((err, currentweek) => {
+            if (err) {
+                console.error("Error getting current week:", err);
+                return res.status(500).json({ error: err.message });
             }
-        );
+            const updateUserQuery = `
+                UPDATE Users
+                SET card_balance = (SELECT count(*) FROM Games WHERE user_id = ? and played = 0 and beta_block_id = ? and week = ?)
+                WHERE user_id = ?;
+            `;
+            console.log("CardBalance Update Query", updateUserQuery);
+            pool.query(
+                updateUserQuery,
+                [user_id, beta_block_id, currentweek, user_id],
+                (err, result) => {
+                    if (err) {
+                        console.error("Error Updating User data:", err);
+                        return res.status(500).json({ error: err.message });
+                    }
+                    return res.status(200).json({
+                        ...result,
+                        insertedGames: gameResult.affectedRows
+                    });
+                }
+            );
+        });
     });
 });
 

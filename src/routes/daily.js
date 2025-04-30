@@ -2,6 +2,8 @@ const express = require("express");
 const pool = require("../configs/db");
 const router = express.Router();
 const { createGamesForDaily } = require("../controller/gameController");
+const { getCurrentActiveBetaBlock } = require("../controller/betaBlockController");
+const { getCurrentWeek } = require("../utils/datetime");
 
 router.post("/question", (req, res) => {
     const { user_id, beta_block_id } = req.body;
@@ -103,24 +105,32 @@ router.post("/answer", (req, res) => {
                             console.error("Error inserting games:", err);
                             return res.status(500).json({ error: err.message });
                         }
-                        const updateUserQuery = `
-                            UPDATE Users
-                            SET card_balance = (SELECT count(*) FROM Games WHERE user_id = ? and played = 0 and beta_block_id = ?)
-                            WHERE user_id = ?;
-                        `;
-                        pool.query(updateUserQuery, [user_id, beta_block_id, user_id], (err, updateResult) => {
+                        getCurrentActiveBetaBlock((err, activeCampaign) => {
+                            const currentWeek = getCurrentWeek(activeCampaign.date_time_initial)
                             if (err) {
-                                console.error("Error updating user balance:", err);
+                                console.error("Error getting current week:", err);
                                 return res.status(500).json({ error: err.message });
                             }
-                            console.log("User balance updated successfully");
-                            return res.status(200).json({
-                                message: "Answer, daily record, and games inserted successfully!",
-                                answer_id: answerResult.insertId,
-                                daily: dailyRecord,
-                                insertedGames: gameResult.affectedRows
+                            const updateUserQuery = `
+                                UPDATE Users
+                                SET card_balance = (SELECT count(*) FROM Games WHERE user_id = ? and played = 0 and beta_block_id = ? and week = ?)
+                                WHERE user_id = ?;
+                            `;
+
+                            pool.query(updateUserQuery, [user_id, beta_block_id, currentWeek, user_id], (err, updateResult) => {
+                                if (err) {
+                                    console.error("Error updating user balance:", err);
+                                    return res.status(500).json({ error: err.message });
+                                }
+                                console.log("User balance updated successfully");
+                                return res.status(200).json({
+                                    message: "Answer, daily record, and games inserted successfully!",
+                                    answer_id: answerResult.insertId,
+                                    daily: dailyRecord,
+                                    insertedGames: gameResult.affectedRows
+                                });
                             });
-                        });
+                        })
                     });
                 });
             });
