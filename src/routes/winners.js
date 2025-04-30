@@ -1,5 +1,6 @@
 const express = require("express");
 const pool = require("../configs/db");
+const { getCurrentWeek } = require("../utils/datetime");
 const router = express.Router();
 
 router.get("/", (req, res) => {
@@ -29,10 +30,7 @@ router.get("/", (req, res) => {
         console.log("Active campaign found. ID:", activeCampaign.beta_block_id);
 
         // 2. Calculate the current week of the campaign using the campaign start date.
-        const campaignStart = new Date(activeCampaign.date_time_initial);
-        const today = new Date();
-        const daysSinceStart = Math.floor((today - campaignStart) / (1000 * 60 * 60 * 24));
-        const currentWeek = Math.floor(daysSinceStart / 7) + 1;
+        const currentWeek = getCurrentWeek(activeCampaign.date_time_initial)
         console.log("Calculated current week:", currentWeek);
 
         // 3. Query a random user from the Users table.

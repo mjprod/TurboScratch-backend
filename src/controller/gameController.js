@@ -146,8 +146,7 @@ function createGamesForDaily(user_id, cards_won, beta_block_id, callback) {
             `);
         console.log("NewGames array to insert:", newGames);
 
-        pool.query(
-          `
+        pool.query(`
               INSERT INTO Games 
                 (user_id, beta_block_id, lucky_symbol_won, number_combination_total, theme_id, played, week)
               VALUES ?
