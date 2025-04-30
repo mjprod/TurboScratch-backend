@@ -20,7 +20,7 @@ dotenv.config({ path: fileToUse });
 
 const pool = require("./src/configs/db");
 
-const runMigrations = async () => {
+const run = async () => {
   console.log("Finished Migrations")
 
   await pool.promise().query(`
@@ -54,6 +54,4 @@ const runMigrations = async () => {
   await pool.promise().end();
 };
 
-runMigrations().catch((err) => {
-  console.log(err)
-}) 
+run().catch(console.error);
