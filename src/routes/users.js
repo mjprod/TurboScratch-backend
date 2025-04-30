@@ -1,5 +1,6 @@
 const express = require("express");
 const pool = require("../configs/db");
+const { getTotalWeeks, getCurrentWeek } = require("../utils/datetime");
 const router = express.Router();
 
 router.post("/", (req, res) => {
@@ -128,19 +129,8 @@ router.post("/", (req, res) => {
 });
 
 function fetchDailyDataAndReturn(user, activeCampaign, res) {
-    const campaignStart = new Date(activeCampaign.date_time_initial);
-    const campaignEnd = new Date(activeCampaign.date_time_final);
-    const today = new Date();
-
-    const diffDays = Math.floor(
-        (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24)
-    );
-    const totalWeeks = Math.floor(diffDays / 7);
-
-    const daysSinceStart = Math.floor(
-        (today - campaignStart) / (1000 * 60 * 60 * 24)
-    );
-    const currentWeek = Math.floor(daysSinceStart / 7) + 1;
+    const totalWeeks = getTotalWeeks(activeCampaign.date_time_initial, activeCampaign.date_time_final)
+    const currentWeek = getCurrentWeek(activeCampaign.date_time_initial)
 
     const dailyQuery = `
       SELECT 

@@ -45,9 +45,31 @@ function convertSydneyLocalDateToUTC(dateObj) {
   return sydneyDate.toISOString();
 }
 
+function getCurrentWeek(startDate) {
+  const campaignStart = new Date(startDate);
+  const today = new Date();
+
+  const daysSinceStart = Math.floor(
+    (today - campaignStart) / (1000 * 60 * 60 * 24)
+  );
+  return Math.floor(daysSinceStart / 7) + 1;
+}
+
+function getTotalWeeks(startDate, endDate) {
+  const campaignStart = new Date(startDate);
+  const campaignEnd = new Date(endDate);
+
+  const diffDays = Math.ceil(
+    (campaignEnd - campaignStart) / (1000 * 60 * 60 * 24)
+  );
+  return Math.floor(diffDays / 7);
+}
+
 module.exports = {
   getCurrentWeekStartDate,
   getCurrentDate,
   formatDate,
   convertSydneyLocalDateToUTC,
+  getTotalWeeks,
+  getCurrentWeek
 };

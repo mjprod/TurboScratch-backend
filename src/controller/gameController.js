@@ -1,5 +1,6 @@
 const pool = require("../configs/db");
-const { getCurrentActiveBetaBlock, getCurrentWeek } = require("./betaBlockController");
+const { getCurrentWeek } = require("../utils/datetime");
+const { getCurrentActiveBetaBlock } = require("./betaBlockController");
 
 function getConfigDistribution(callback) {
   const configQuery = "SELECT type, value FROM Config WHERE type IN ('x0','x1','x2','x3','x4','ls')";
@@ -99,7 +100,8 @@ function getRandomInt(min, max) {
 
 function createGamesForDaily(user_id, cards_won, beta_block_id, callback) {
   const cardsWon = cards_won;
-  getCurrentWeek((err, currentWeek) => {
+  getCurrentActiveBetaBlock((err, activeCampain) => {
+    const currentWeek = getCurrentWeek(activeCampain.date_time_initial)
     if (err) return callback(err)
     getConfigDistribution((err, configDistribution) => {
       if (err) return callback(err);
@@ -137,20 +139,19 @@ function createGamesForDaily(user_id, cards_won, beta_block_id, callback) {
             currentWeek
           ]);
         }
-
         console.log("Insert Games Query:", `
-            INSERT INTO Games 
-              (user_id, beta_block_id, lucky_symbol_won, number_combination_total, theme_id, played, week)
-            VALUES ?
-          `);
+              INSERT INTO Games 
+                (user_id, beta_block_id, lucky_symbol_won, number_combination_total, theme_id, played, week)
+              VALUES ?
+            `);
         console.log("NewGames array to insert:", newGames);
 
         pool.query(
           `
-            INSERT INTO Games 
-              (user_id, beta_block_id, lucky_symbol_won, number_combination_total, theme_id, played, week)
-            VALUES ?
-            `,
+              INSERT INTO Games 
+                (user_id, beta_block_id, lucky_symbol_won, number_combination_total, theme_id, played, week)
+              VALUES ?
+              `,
           [newGames],
           (err, gameResult) => {
             if (err) {
