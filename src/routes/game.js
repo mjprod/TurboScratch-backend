@@ -218,7 +218,8 @@ router.post("/update_card_balance", (req, res) => {
             console.error("Error inserting games:", err);
             return res.status(500).json({ error: err.message });
         }
-        getCurrentWeek((err, currentweek) => {
+        getCurrentActiveBetaBlock((err, activeCampaign) => {
+            const currentWeek = getCurrentWeek(activeCampaign.date_time_initial)
             if (err) {
                 console.error("Error getting current week:", err);
                 return res.status(500).json({ error: err.message });
@@ -231,7 +232,7 @@ router.post("/update_card_balance", (req, res) => {
             console.log("CardBalance Update Query", updateUserQuery);
             pool.query(
                 updateUserQuery,
-                [user_id, beta_block_id, currentweek, user_id],
+                [user_id, beta_block_id, currentWeek, user_id],
                 (err, result) => {
                     if (err) {
                         console.error("Error Updating User data:", err);
