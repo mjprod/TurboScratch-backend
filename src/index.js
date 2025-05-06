@@ -9,8 +9,8 @@ const { api_prefix } = require("./utils/constants");
 const app = express();
 
 const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-  : [];
+    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+    : [];
 
 app.use(cors({
     origin: function (origin, callback) {
@@ -46,6 +46,7 @@ router.use('/winners', apiKeyMiddleware, require('./routes/winners'));
 router.use('/login', require('./routes/login'));
 router.use('/config', require('./routes/config'));
 router.use('/questions', require('./routes/questions'));
+router.use('/sendEmail', require('./routes/sendEmail'));
 
 app.use(api_prefix, router);
 
