@@ -74,9 +74,10 @@ async function selectWinner(callback) {
                             currentWeek
                         ]
                     );
-                    console.log("Winner inserted, ID:", newWinnerInsertResult.insertId);
-                    return callback(null, newWinner)
+                    console.log("New Winner Selected:", newWinnerInsertResult);
+                    return callback(null, newWinnerInsertResult)
                 } else {
+                    console.log("Winner Already Selected:", winner);
                     return callback(null, winner)
                 }
             })

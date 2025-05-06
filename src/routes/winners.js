@@ -8,7 +8,7 @@ router.get("/", (req, res) => {
         if (err) {
             return console.error(err);
         }
-        return res.status(201).json({
+        return res.status(200).json({
             "user": winner,
         });
     });
