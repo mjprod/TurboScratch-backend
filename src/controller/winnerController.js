@@ -11,16 +11,28 @@ async function checkWinner(beta_block_id, currentWeek, callback) {
     try {
         const [winnerResults] = await pool.promise().query(checkWinnerQuery, [beta_block_id, currentWeek])
         if (winnerResults.length) {
-            console.log("Winner already exists:", winnerResults[0]);
+            console.log("WinnerFound", winnerResults[0]);
             return callback(null, winnerResults[0]);
         } else {
             return callback(null, null);
         }
     } catch (err) {
         console.error("Error checking winner:", err);
-        return callback(err);
+        return callback(err, null);
     }
 };
+
+async function getWinner(callback) {
+    getCurrentActiveBetaBlock((err, activeCampain) => {
+        if (err) return callback(err, null)
+        if (activeCampain) {
+            const currentWeek = getCurrentWeek(activeCampain.date_time_initial)
+            checkWinner(activeCampain.beta_block_id, currentWeek, async (err, winner) => {
+                return callback(err, winner)
+            })
+        }
+    })
+}
 
 async function selectWinner(callback) {
     getCurrentActiveBetaBlock((err, activeCampain) => {
@@ -71,4 +83,4 @@ async function selectWinner(callback) {
         }
     })
 }
-module.exports = { selectWinner }  
+module.exports = { selectWinner, getWinner }  
