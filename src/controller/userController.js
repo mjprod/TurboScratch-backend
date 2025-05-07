@@ -1,4 +1,5 @@
 const pool = require("../configs/db");
+const { getCurrentActiveBetaBlock } = require("./betaBlockController");
 
 async function getUser(user_id, callback) {
     const checkWinnerQuery = `
@@ -20,4 +21,26 @@ async function getUser(user_id, callback) {
     }
 };
 
-module.exports = { getUser }
+async function resetUsersScores(callback) {
+    getCurrentActiveBetaBlock(async (err, activeCampain) => {
+        if (err) return console.log(err);
+        const resetQuery = `
+        UPDATE Users
+        SET total_score = 0,
+            ticket_balance = 0,
+            card_balance = 0
+        WHERE current_beta_block = ?
+    `;
+        try {
+            const [result] = await pool.promise().query(resetQuery, [activeCampain.beta_block_id]);
+            console.log("Users scores reset for beta_block_id", activeCampain.beta_block_id);
+            return callback(null, result);
+        } catch (err) {
+            console.error("Error resetting user score:", err);
+            return callback(err, null);
+        }
+    });
+
+}
+
+module.exports = { getUser, resetUsersScores }
