@@ -15,7 +15,7 @@ const getCurrentActiveBetaBlock = async (completion) => {
             console.log("Active campaign found. ID:", activeCampaign.beta_block_id);
             completion(undefined, activeCampaign)
         } else {
-            console.log("Active campaign found. ID:", activeCampaign.beta_block_id);
+            console.log("No Active Campains.");
             completion(err, undefined)
         }
     } catch (err) {

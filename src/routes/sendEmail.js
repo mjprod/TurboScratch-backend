@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { SESv2Client, SendEmailCommand } = require('@aws-sdk/client-sesv2');
-
-const client = new SESv2Client({ region: 'ap-southeast-2' });
+const { SendEmailCommand } = require('@aws-sdk/client-sesv2');
+const emailClient = require('../configs/email');
 
 router.post('/', async (req, res) => {
   const { name, email } = req.body;
@@ -22,7 +21,7 @@ router.post('/', async (req, res) => {
 
   try {
     const command = new SendEmailCommand(params);
-    const response = await client.send(command);
+    const response = await emailClient.send(command);
     console.log('Email sent successfully! Message ID:', response.MessageId);
 
     res.status(200).json({
