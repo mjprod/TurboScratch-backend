@@ -5,6 +5,7 @@ const startLeaderboardCronJob = require("./corns/leaderboard");
 const apiKeyMiddleware = require('./middlewares/authMiddleware');
 const cryptoMiddleware = require('./middlewares/cryptoMiddlewear');
 const { api_prefix } = require("./utils/constants");
+const startWinnerSelectionCronJob = require("./corns/winnerCorn");
 
 const app = express();
 
@@ -51,5 +52,6 @@ router.use('/sendEmail', require('./routes/sendEmail'));
 app.use(api_prefix, router);
 
 startLeaderboardCronJob();
+startWinnerSelectionCronJob();
 
 module.exports = app;
