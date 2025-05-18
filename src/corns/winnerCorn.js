@@ -6,8 +6,8 @@ const emailClient = require("../configs/email");
 
 
 const startWinnerSelectionCronJob = (dateTime = "59 13 * * 0") => {
-    console.log(`Running cron job at ${new Date().toISOString()}`);
     cron.schedule(dateTime, async () => {
+        console.log(`Running cron job at ${new Date().toISOString()}`);
         selectWinner(async (err, winner) => {
             if (err) {
                 return console.err(err)
